@@ -9,6 +9,16 @@ export type Context = {
   steps: Record<string, { summary: string; outputs: any }>;
   vars: Record<string, any>;
   datasets: Record<string, any[]>;
+  liveCsv?: Record<
+    string,
+    {
+      sessionId: string;
+      path: string;
+      contents: string;
+      rows: number;
+      format: string;
+    }
+  >;
 };
 export const newContext = (): Context => ({
   steps: {},

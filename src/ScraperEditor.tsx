@@ -201,6 +201,12 @@ export function ScraperEditor({
             (v) => onChange({ collect: { ...step.collect!, uniqueKey: v } }),
             "Duplicates are ignored. Empty compares entire rows.",
           )}
+          {input(
+            "Live CSV filename prefix (optional)",
+            step.collect.liveCsvName ?? "",
+            (v) => onChange({ collect: { ...step.collect!, liveCsvName: v } }),
+            "Writes and appends actual CSV rows after each collection. Leave empty to export only at the end.",
+          )}
         </>
       )}
       {step.wait && (

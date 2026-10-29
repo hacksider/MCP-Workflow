@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.13.0** · Tauri + React + Rust · Windows installer
+Current version: **0.14.0** · Tauri + React + Rust · Windows installer
 
 ![Visual graph with Beginning, End, conditions, loops and recovery](docs/screenshots/graph-editor.png)
 
@@ -12,7 +12,7 @@ Current version: **0.13.0** · Tauri + React + Rust · Windows installer
 
 1. Open the desktop app and click **Scraper demo**.
 2. In **Workflow settings**, choose an existing workspace folder.
-3. Click **Run workflow**, inspect the results, then **Run again**.
+3. Open **Live view**, then **Run workflow** to see the fetched page beside the graph and the actual CSV fill after each page. Use **Show CSV** for the completed file.
 
 The Amazon-style example uses **fictional bundled pages**. It fetches two pages, extracts products, follows pagination, removes duplicates and saves **five products** as CSV and JSON. No account or live Amazon access is required. This is a basic demonstration of how the tool works, not an Amazon integration.
 

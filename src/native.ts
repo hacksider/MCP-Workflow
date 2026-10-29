@@ -112,6 +112,15 @@ export async function executeNativeStep(
     if (combined.length > 100000 || JSON.stringify(combined).length > 20000000)
       throw Error("Dataset limit exceeded");
     context.datasets[c.dataset] = combined;
+    if (c.liveCsvName && combined.length) {
+      context.liveCsv ??= {};
+      context.liveCsv[c.dataset] = await invoke<any>("write_live_csv", {
+        cwd,
+        name: c.liveCsvName,
+        sessionId: context.liveCsv[c.dataset]?.sessionId ?? null,
+        rows: combined,
+      });
+    }
     return done(
       `Collected ${combined.length - prior.length} new rows (${combined.length} total)`,
       { added: combined.length - prior.length, total: combined.length },
@@ -140,6 +149,11 @@ export async function executeNativeStep(
     if (!c) throw Error("Configure export");
     const rows = context.datasets[c.dataset];
     if (!rows?.length) throw Error("Dataset is empty");
+    if (c.format === "csv" && context.liveCsv?.[c.dataset])
+      return done(
+        `Saved ${rows.length} rows to ${context.liveCsv[c.dataset].path}`,
+        { ...context.liveCsv[c.dataset], contents: undefined },
+      );
     const result = await invoke<any>("export_rows", {
       cwd,
       name: c.name,

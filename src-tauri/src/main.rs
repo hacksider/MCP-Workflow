@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod http;
+mod live_csv;
 mod plugins;
 mod providers;
 mod scraping;
@@ -204,11 +205,14 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(Server::default())
+        .manage(live_csv::LiveCsv::default())
         .manage(providers::ClaudeState::default())
         .invoke_handler(tauri::generate_handler![
             providers::provider_check,
             providers::claude_turn,
             providers::claude_control,
+            live_csv::write_live_csv,
+            live_csv::release_live_csv,
             connect,
             rpc,
             respond,

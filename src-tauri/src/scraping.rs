@@ -186,7 +186,7 @@ pub fn extract_rows(
     };
     Ok(json!({"rows":rows,"nextUrl":next.unwrap_or_default()}))
 }
-fn cell(value: &Value) -> String {
+pub fn cell(value: &Value) -> String {
     let text = match value {
         Value::String(s) => s.clone(),
         Value::Null => String::new(),

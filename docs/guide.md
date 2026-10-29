@@ -33,7 +33,7 @@ The [Amazon-style template](../examples/amazon-scraper-demo.json) uses two bundl
 | Step | What it does |
 | --- | --- |
 | Set values | Starts `url` at the first fixture page |
-| Wait | Pauses two seconds before fetching |
+| Wait | Pauses three seconds before fetching |
 | Fetch page | Reads the page, with a three-page cap |
 | Extract data | Selects product rows and extracts ASIN, title, price and link |
 | Collect rows | Keeps one product per ASIN |
@@ -46,6 +46,12 @@ Two pages contain six rows, including one duplicate. A successful run exports fi
 [![Watch the actual desktop demonstration](screenshots/scraper-completed.png)](demo/amazon-scraper-demo.mp4)
 
 For a live site you are authorized to scrape, change the first URL, row selector, field selectors and next-link selector. Inspect that site's actual HTML; the demonstration selectors are not a promise of compatibility with live Amazon pages. Fetch checks robots.txt, accepts HTTP(S) without embedded credentials, limits each response to 2 MB and 30 seconds, and retries transient HTTP failures up to twice. It stops on denied robots rules, access errors, CAPTCHA indicators and redirects. Supply the final permitted URL directly. It does not bypass logins or render JavaScript. A **Computer task** can use a compatible browser runtime when available.
+
+## Watch the page and CSV together
+
+Open **Live view** on a scraper workflow. The graph and the actual fetched HTML appear side by side. The bundled fixture may be previewed before a run; live websites appear only when Fetch page actually reads them. The preview is read-only, sandboxed, and blocks scripts and external resources.
+
+Set **Live CSV filename prefix** on Collect rows to write the real file after each batch. New unique rows append to the same CSV during the run, and the viewer displays content read back from disk. The first sample page writes three rows; the second adds two new products. **Show CSV** focuses the final result, **CSV text** displays its raw contents, and **Open CSV file** opens the completed file in your default application. Keep the live file closed in applications that lock it while the workflow writes. Each run creates a fresh filename; a final CSV export reuses its live file. Existing rows and columns cannot be changed midway through a live export.
 
 ## Design the graph and recover from failures
 

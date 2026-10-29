@@ -6,6 +6,7 @@ import { executeNativeStep } from "../src/native";
 const calls = vi.hoisted(() => ({
   exports: [] as any[],
   urls: [] as string[],
+  live: [] as number[],
 }));
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async (command, args: any) => {
@@ -20,6 +21,16 @@ vi.mock("@tauri-apps/api/core", () => ({
           ? [{ asin: "a" }, { asin: "b" }, { asin: "c" }]
           : [{ asin: "c" }, { asin: "d" }, { asin: "e" }],
         nextUrl: first ? "fixture://amazon-demo/page-2" : "",
+      };
+    }
+    if (command === "write_live_csv") {
+      calls.live.push(args.rows.length);
+      return {
+        sessionId: args.sessionId ?? `session-${calls.urls.length}`,
+        path: "demo-live.csv",
+        contents: "actual mock CSV",
+        rows: args.rows.length,
+        format: "csv",
       };
     }
     if (command === "export_rows") {
@@ -62,7 +73,8 @@ describe("scraper workflow", () => {
       "fixture://amazon-demo/page-1",
       "fixture://amazon-demo/page-2",
     ]);
-    expect(calls.exports).toHaveLength(4);
+    expect(calls.exports).toHaveLength(2);
+    expect(calls.live).toEqual([3, 5, 3, 5]);
     expect(calls.exports.every((e) => e.rows.length === 5)).toBe(true);
   });
   it("fails on missing unique keys and observes cancellation while waiting", async () => {

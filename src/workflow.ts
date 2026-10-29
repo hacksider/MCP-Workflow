@@ -54,7 +54,12 @@ export type Step = {
     }[];
     nextSelector: string;
   };
-  collect?: { source: string; dataset: string; uniqueKey: string };
+  collect?: {
+    source: string;
+    dataset: string;
+    uniqueKey: string;
+    liveCsvName?: string;
+  };
   wait?: { seconds: number };
   export?: { dataset: string; format: "csv" | "json"; name: string };
   condition?: {
@@ -320,6 +325,11 @@ export function parseWorkflow(text: string, draft = false): Workflow {
         ))
     )
       throw Error("Invalid collection");
+    if (
+      s.collect?.liveCsvName !== undefined &&
+      typeof s.collect.liveCsvName !== "string"
+    )
+      throw Error("Invalid live CSV name");
     if (
       s.kind === "wait" &&
       (!s.wait ||

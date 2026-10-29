@@ -38,7 +38,8 @@ import {
   type Provider,
 } from "./providers";
 import { listen } from "@tauri-apps/api/event";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { LiveMonitor, type MonitorData } from "./LiveMonitor";
+import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import {
   connect,
   chooseUploads,
@@ -184,6 +185,8 @@ function App() {
   const [account, setAccount] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [running, setRunning] = useState(false);
+  const [monitorOpen, showMonitor] = useState(false);
+  const [monitorData, setMonitorData] = useState<MonitorData>({});
   const [runTotal, setRunTotal] = useState(0);
   const [metrics, setMetrics] = useState<Record<string, WorkflowMetrics>>(
     () => {
@@ -283,6 +286,8 @@ function App() {
     }
   }, [library, autoSave]);
   function resetEditor() {
+    showMonitor(false);
+    setMonitorData({});
     select(null);
     showSettings(true);
     setRuns([]);
@@ -694,6 +699,24 @@ function App() {
     bindRuntimeSkills(plan, skills, catalog);
     log("Required plugins and skills are ready.");
   }
+  async function openMonitor() {
+    showMonitor(true);
+    if (runningLock.current) return;
+    try {
+      const values = workflow.steps.find((s) => s.kind === "values")?.values;
+      const url = values ? JSON.parse(values).url : undefined;
+      if (typeof url === "string" && url.startsWith("fixture://amazon-demo/")) {
+        const page = await invoke<any>("fetch_page", { url });
+        if (!runningLock.current)
+          setMonitorData((prev) => ({
+            ...prev,
+            page: { ...page, preview: true, pageNumber: 1 },
+          }));
+      }
+    } catch {
+      /* The fetched page will be displayed during execution instead. */
+    }
+  }
   async function execute() {
     if (runningLock.current) return;
     setError("");
@@ -709,6 +732,7 @@ function App() {
     cancelled.current = false;
     setRunning(true);
     setRunTotal(plan.length);
+    setMonitorData((previous) => ({ page: previous.page }));
     const workflowId = workflow.id!;
     const timings: { stepId: string; status: string; durationMs?: number }[] =
       [];
@@ -911,6 +935,34 @@ function App() {
               /* Text outputs remain text. */
             }
             context.steps[step.id] = { summary: report.summary, outputs: data };
+            if (step.kind === "fetch")
+              setMonitorData((prev) => ({
+                ...prev,
+                page: data as MonitorData["page"],
+              }));
+            if (
+              step.kind === "collect" &&
+              step.collect &&
+              context.liveCsv?.[step.collect.dataset]
+            )
+              setMonitorData((prev) => ({
+                ...prev,
+                csv: context.liveCsv![step.collect!.dataset],
+              }));
+            if (step.kind === "condition") {
+              const matched = (data as any).matched;
+              const target = matched ? step.condition?.yes : step.condition?.no;
+              const name =
+                target === "$end"
+                  ? "End"
+                  : (workflow.steps.find((s) => s.id === target)?.name ??
+                    "next step");
+              setMonitorData((prev) => ({
+                ...prev,
+                condition: `${step.name} → ${matched ? "True" : "False"} → ${name}`,
+              }));
+            }
+
             timing.status = "completed";
             setRuns((r) =>
               r.map((s) =>
@@ -990,6 +1042,10 @@ function App() {
     } catch (e) {
       setError(String(e));
     } finally {
+      for (const file of Object.values(context.liveCsv ?? {}))
+        await invoke("release_live_csv", { sessionId: file.sessionId }).catch(
+          (e) => log(String(e)),
+        );
       const elapsed = performance.now() - runStarted.current;
       setRunDuration(elapsed);
       setMetrics((all) => ({
@@ -1086,7 +1142,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.13.0</span>
+          <span className="version">0.14.0</span>
         </div>
         <div className="workflow-library-actions">
           <button
@@ -1312,6 +1368,11 @@ function App() {
               />
             </div>
             <div className="heading-actions">
+              {workflow.steps.some((s) => s.kind === "fetch") && (
+                <button disabled={busy} onClick={openMonitor}>
+                  Live view
+                </button>
+              )}
               <button
                 disabled={running}
                 title="Add the Amazon-style scraper demonstration to your workflows"
@@ -2159,6 +2220,20 @@ function App() {
           e.target.value = "";
         }}
       />
+      {monitorOpen && (
+        <LiveMonitor
+          workflow={workflow}
+          data={monitorData}
+          running={running}
+          active={activeFlow}
+          reachedEnd={reachedEnd}
+          runs={runs}
+          now={now}
+          onRun={running ? stop : execute}
+          onClose={() => showMonitor(false)}
+          onOpenCsv={(path) => openPath(path).catch((e) => setError(String(e)))}
+        />
+      )}
       {libraryOpen && (
         <LibraryDialog
           library={library}
