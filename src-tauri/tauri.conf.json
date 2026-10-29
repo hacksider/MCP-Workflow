@@ -1,10 +1,10 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "MCP Workflow",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "identifier": "dev.mcp-workflow.studio",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "npm run build:helper && npm run dev",
     "devUrl": "http://127.0.0.1:1420",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
@@ -34,7 +34,9 @@
     "licenseFile": "../LICENSE",
     "resources": {
       "../LICENSE": "LICENSE",
-      "../COMMERCIAL-LICENSE.md": "COMMERCIAL-LICENSE.md"
+      "../COMMERCIAL-LICENSE.md": "COMMERCIAL-LICENSE.md",
+      "resources/claude-runner.mjs": "claude-runner.mjs",
+      "resources/CLAUDE-SDK-NOTICE.md": "CLAUDE-SDK-NOTICE.md"
     }
   }
 }

@@ -1,3 +1,4 @@
+import type { Provider } from "./providers";
 export type Capability = {
   id: string;
   name: string;
@@ -11,7 +12,20 @@ export type Capability = {
 export type Step = {
   id: string;
   kind:
-    "instruction" | "upload" | "form" | "api" | "computer" | "condition" | "loop" | "values" | "fetch" | "extract" | "collect" | "wait" | "export" | Capability["kind"];
+    | "instruction"
+    | "upload"
+    | "form"
+    | "api"
+    | "computer"
+    | "condition"
+    | "loop"
+    | "values"
+    | "fetch"
+    | "extract"
+    | "collect"
+    | "wait"
+    | "export"
+    | Capability["kind"];
   name: string;
   instructions: string;
   endpoint: string;
@@ -19,13 +33,29 @@ export type Step = {
   repeat?: number;
   next?: string;
   values?: string;
-  fetch?: {url:string;maxPages:number};
-  extract?: {source:string;rowSelector:string;fields:{name:string;selector:string;attribute:string;required?:boolean}[];nextSelector:string};
-  collect?: {source:string;dataset:string;uniqueKey:string};
-  wait?: {seconds:number};
-  export?: {dataset:string;format:"csv"|"json";name:string};
-  condition?: {left: string; operator: "equals" | "contains" | "truthy" | "greater"; right: string; yes: string; no: string};
-  loop?: {times: number; body: string; after: string};
+  fetch?: { url: string; maxPages: number };
+  extract?: {
+    source: string;
+    rowSelector: string;
+    fields: {
+      name: string;
+      selector: string;
+      attribute: string;
+      required?: boolean;
+    }[];
+    nextSelector: string;
+  };
+  collect?: { source: string; dataset: string; uniqueKey: string };
+  wait?: { seconds: number };
+  export?: { dataset: string; format: "csv" | "json"; name: string };
+  condition?: {
+    left: string;
+    operator: "equals" | "contains" | "truthy" | "greater";
+    right: string;
+    yes: string;
+    no: string;
+  };
+  loop?: { times: number; body: string; after: string };
   capability?: Capability;
   files?: { name: string; path: string; size: number }[];
   formFields?: FormField[];
@@ -54,6 +84,7 @@ export type Workflow = {
   instructions: string;
   steps: Step[];
   maxExecutions?: number;
+  provider?: Provider;
 };
 export const outcomeSchema = {
   type: "object",
@@ -85,7 +116,19 @@ export const newStep = (kind: Step["kind"], capability?: Capability): Step => ({
   id: crypto.randomUUID(),
   kind,
   name:
-    capability?.name ?? ({values:"Set values",fetch:"Fetch page",extract:"Extract data",collect:"Collect rows",wait:"Wait",export:"Export file",condition:"Condition",loop:"Loop"} as Partial<Record<Step["kind"],string>>)[kind] ??
+    capability?.name ??
+    (
+      {
+        values: "Set values",
+        fetch: "Fetch page",
+        extract: "Extract data",
+        collect: "Collect rows",
+        wait: "Wait",
+        export: "Export file",
+        condition: "Condition",
+        loop: "Loop",
+      } as Partial<Record<Step["kind"], string>>
+    )[kind] ??
     (kind === "api"
       ? "Connect to an API"
       : kind === "computer"
@@ -100,13 +143,32 @@ export const newStep = (kind: Step["kind"], capability?: Capability): Step => ({
   documentation: "",
   repeat: 1,
   values: kind === "values" ? '{"url":"https://example.com"}' : undefined,
-  fetch: kind === "fetch" ? {url:"{{vars.url}}",maxPages:10} : undefined,
-  extract: kind === "extract" ? {source:"",rowSelector:"article",fields:[{name:"title",selector:"h2",attribute:"",required:true}],nextSelector:""} : undefined,
-  collect: kind === "collect" ? {source:"",dataset:"results",uniqueKey:"title"} : undefined,
-  wait: kind === "wait" ? {seconds:2} : undefined,
-  export: kind === "export" ? {dataset:"results",format:"csv",name:"results"} : undefined,
-  condition: kind === "condition" ? {left:"",operator:"truthy",right:"",yes:"",no:"$end"} : undefined,
-  loop: kind === "loop" ? {times:3,body:"",after:"$end"} : undefined,
+  fetch: kind === "fetch" ? { url: "{{vars.url}}", maxPages: 10 } : undefined,
+  extract:
+    kind === "extract"
+      ? {
+          source: "",
+          rowSelector: "article",
+          fields: [
+            { name: "title", selector: "h2", attribute: "", required: true },
+          ],
+          nextSelector: "",
+        }
+      : undefined,
+  collect:
+    kind === "collect"
+      ? { source: "", dataset: "results", uniqueKey: "title" }
+      : undefined,
+  wait: kind === "wait" ? { seconds: 2 } : undefined,
+  export:
+    kind === "export"
+      ? { dataset: "results", format: "csv", name: "results" }
+      : undefined,
+  condition:
+    kind === "condition"
+      ? { left: "", operator: "truthy", right: "", yes: "", no: "$end" }
+      : undefined,
+  loop: kind === "loop" ? { times: 3, body: "", after: "$end" } : undefined,
   api:
     kind === "api"
       ? { method: "GET", headers: "{}", body: "", authEnv: "" }
@@ -130,8 +192,14 @@ export const newWorkflow = (): Workflow => ({
 export function parseWorkflow(text: string): Workflow {
   const w = JSON.parse(text);
   const kinds = [
-    "values", "fetch", "extract", "collect", "wait", "export",
-    "condition", "loop",
+    "values",
+    "fetch",
+    "extract",
+    "collect",
+    "wait",
+    "export",
+    "condition",
+    "loop",
     "instruction",
     "upload",
     "form",
@@ -152,6 +220,16 @@ export function parseWorkflow(text: string): Workflow {
     w.steps.length > 500
   )
     throw new Error("Invalid workflow file (expected schema version 1).");
+  if (
+    w.provider &&
+    (!["chatgpt", "claude", "openai-api", "anthropic-api", "bedrock"].includes(
+      w.provider.kind,
+    ) ||
+      !["model", "keyEnv", "region", "profile"].every(
+        (k) => typeof w.provider[k] === "string",
+      ))
+  )
+    throw Error("Invalid AI provider");
   const ids = new Set();
   for (const s of w.steps) {
     if (
@@ -163,15 +241,81 @@ export function parseWorkflow(text: string): Workflow {
     )
       throw new Error("Invalid or duplicate workflow step.");
     ids.add(s.id);
-    if (s.next !== undefined && typeof s.next !== 'string') throw Error('Invalid next destination');
-    if (s.kind === 'condition' && (!s.condition || !['left','right','yes','no'].every(k=>typeof s.condition[k]==='string') || !['equals','contains','truthy','greater'].includes(s.condition.operator))) throw Error('Invalid condition');
-    if (s.kind === 'loop' && (!s.loop || !Number.isInteger(s.loop.times) || s.loop.times<1 || s.loop.times>1000 || typeof s.loop.body!=='string' || typeof s.loop.after!=='string')) throw Error('Invalid loop');
-    if (s.kind === 'values' && typeof s.values!=='string') throw Error('Invalid values');
-    if (s.kind === 'fetch' && (!s.fetch || typeof s.fetch.url!=='string' || !Number.isInteger(s.fetch.maxPages) || s.fetch.maxPages<1 || s.fetch.maxPages>1000)) throw Error('Invalid fetch configuration');
-    if (s.kind === 'extract' && (!s.extract || !['source','rowSelector','nextSelector'].every(k=>typeof s.extract[k]==='string') || !Array.isArray(s.extract.fields) || s.extract.fields.length>100 || s.extract.fields.some((f:any)=>!f || !['name','selector','attribute'].every(k=>typeof f[k]==='string')))) throw Error('Invalid extraction');
-    if (s.kind === 'collect' && (!s.collect || !['source','dataset','uniqueKey'].every(k=>typeof s.collect[k]==='string'))) throw Error('Invalid collection');
-    if (s.kind === 'wait' && (!s.wait || !Number.isFinite(s.wait.seconds) || s.wait.seconds<0 || s.wait.seconds>60)) throw Error('Invalid wait duration');
-    if (s.kind === 'export' && (!s.export || typeof s.export.dataset!=='string' || typeof s.export.name!=='string' || !['csv','json'].includes(s.export.format))) throw Error('Invalid export');
+    if (s.next !== undefined && typeof s.next !== "string")
+      throw Error("Invalid next destination");
+    if (
+      s.kind === "condition" &&
+      (!s.condition ||
+        !["left", "right", "yes", "no"].every(
+          (k) => typeof s.condition[k] === "string",
+        ) ||
+        !["equals", "contains", "truthy", "greater"].includes(
+          s.condition.operator,
+        ))
+    )
+      throw Error("Invalid condition");
+    if (
+      s.kind === "loop" &&
+      (!s.loop ||
+        !Number.isInteger(s.loop.times) ||
+        s.loop.times < 1 ||
+        s.loop.times > 1000 ||
+        typeof s.loop.body !== "string" ||
+        typeof s.loop.after !== "string")
+    )
+      throw Error("Invalid loop");
+    if (s.kind === "values" && typeof s.values !== "string")
+      throw Error("Invalid values");
+    if (
+      s.kind === "fetch" &&
+      (!s.fetch ||
+        typeof s.fetch.url !== "string" ||
+        !Number.isInteger(s.fetch.maxPages) ||
+        s.fetch.maxPages < 1 ||
+        s.fetch.maxPages > 1000)
+    )
+      throw Error("Invalid fetch configuration");
+    if (
+      s.kind === "extract" &&
+      (!s.extract ||
+        !["source", "rowSelector", "nextSelector"].every(
+          (k) => typeof s.extract[k] === "string",
+        ) ||
+        !Array.isArray(s.extract.fields) ||
+        s.extract.fields.length > 100 ||
+        s.extract.fields.some(
+          (f: any) =>
+            !f ||
+            !["name", "selector", "attribute"].every(
+              (k) => typeof f[k] === "string",
+            ),
+        ))
+    )
+      throw Error("Invalid extraction");
+    if (
+      s.kind === "collect" &&
+      (!s.collect ||
+        !["source", "dataset", "uniqueKey"].every(
+          (k) => typeof s.collect[k] === "string",
+        ))
+    )
+      throw Error("Invalid collection");
+    if (
+      s.kind === "wait" &&
+      (!s.wait ||
+        !Number.isFinite(s.wait.seconds) ||
+        s.wait.seconds < 0 ||
+        s.wait.seconds > 60)
+    )
+      throw Error("Invalid wait duration");
+    if (
+      s.kind === "export" &&
+      (!s.export ||
+        typeof s.export.dataset !== "string" ||
+        typeof s.export.name !== "string" ||
+        !["csv", "json"].includes(s.export.format))
+    )
+      throw Error("Invalid export");
 
     if (
       s.api !== undefined &&
@@ -247,7 +391,18 @@ export function stepPrompt(
 ): string {
   if (
     !step.instructions.trim() &&
-    !["upload", "form", "condition", "loop", "values", "fetch", "extract", "collect", "wait", "export"].includes(step.kind) &&
+    ![
+      "upload",
+      "form",
+      "condition",
+      "loop",
+      "values",
+      "fetch",
+      "extract",
+      "collect",
+      "wait",
+      "export",
+    ].includes(step.kind) &&
     !step.api
   )
     throw new Error(`Add instructions to step ${index + 1}.`);

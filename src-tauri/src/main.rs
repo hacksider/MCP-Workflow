@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod http;
 mod plugins;
+mod providers;
 mod scraping;
 mod uploads;
 
@@ -203,7 +204,11 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(Server::default())
+        .manage(providers::ClaudeState::default())
         .invoke_handler(tauri::generate_handler![
+            providers::provider_check,
+            providers::claude_turn,
+            providers::claude_control,
             connect,
             rpc,
             respond,

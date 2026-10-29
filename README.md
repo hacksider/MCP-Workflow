@@ -1,6 +1,6 @@
 # MCP Workflow
 
-Version **0.10.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.11.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
 
 MCP Workflow makes repeatable tasks easy to create using AI. Describe what you want in plain language, organize it into steps, and save an automation you can run again whenever needed. Start with a simple Text step, add skills or connected apps when useful, and describe API operations alongside their documentation. Codex chooses the underlying tools automatically. Every step finishes before the next one starts, carries its results forward, and shows progress and timing so you can see what the automation is doing.
 
@@ -141,3 +141,10 @@ Choose a true/false destination on a Condition. A Loop repeats its body a fixed 
 Click **Scraper demo**, choose an existing workspace in Workflow settings, and Run. The bundled Amazon-style fictional pages demonstrate values → wait → fetch → extract → collect → condition → pagination loop → CSV/JSON export. Six source rows produce five unique products. No account or Amazon connection is needed. Exports receive unique filenames on every run.
 
 For live sites you are authorized to scrape, change the input URL and CSS selectors. Fetch checks robots.txt and stops on blocks, CAPTCHA indicators, redirects, missing required fields and page/execution limits. It fetches HTML without JavaScript rendering. Use Computer task for browser interactions when its runtime is available. The template is a basic educational demonstration of this source-available tool, not an Amazon integration or affiliation.
+
+### AI providers
+Choose a provider in Workflow settings. ChatGPT uses Codex sign-in. Claude subscription uses your locally signed-in Claude Code via the official Agent SDK. Claude providers require Node.js 20+ and Claude Code on PATH (or MCP_WORKFLOW_CLAUDE). Keys are never copied from OAuth stores. OpenAI API and Claude API use named environment variables set before launching the app; Bedrock uses AWS credentials/profile, region and a model ID with access enabled. API usage follows the selected provider’s billing.
+
+Native scraper and CRUD steps need no AI account. Claude loads its own user/project skills, plugins and MCP configuration; the ChatGPT plugin catalog and automatic catalog downloads belong to Codex and are not interchangeable with Claude plugins. The adapters have mock-based tests. A live Claude test reached the runtime and stopped correctly on an expired OAuth token; reauthenticate with Claude Code to use it. Paid API/Bedrock inference was not exercised and requires your credentials and model access.
+
+Official integration references: [Claude plan usage](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan), [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/typescript), [Bedrock setup](https://code.claude.com/docs/en/amazon-bedrock), [Codex provider configuration](https://learn.chatgpt.com/docs/config-file/config-reference).

@@ -1,19 +1,21 @@
 {
   "name": "mcp-workflow",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "private": true,
   "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && npm run build:helper",
     "test": "vitest run",
     "tauri": "tauri",
     "desktop": "tauri dev",
     "desktop:build": "tauri build",
-    "check": "npm run build && npm test"
+    "check": "npm run build && npm test",
+    "build:helper": "node scripts/build-helper.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.312",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-opener": "^2.0.0",
     "lucide-react": "^0.468.0",
@@ -25,6 +27,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "esbuild": "^0.28.2",
     "typescript": "~5.7.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"

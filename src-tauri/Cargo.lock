@@ -1960,7 +1960,7 @@ dependencies = [
 
 [[package]]
 name = "libappindicator"
-version = "0.10.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "03589b9607c868cc7ae54c0b2a22c8dc03dd41692d48f2d7df73615c6a95dc0a"
 dependencies = [
@@ -1973,7 +1973,7 @@ dependencies = [
 
 [[package]]
 name = "libappindicator-sys"
-version = "0.10.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e9ec52138abedcc58dc17a7c6c0c00a2bdb4f3427c7f63fa97fd0d859155caf"
 dependencies = [
@@ -2067,7 +2067,7 @@ dependencies = [
 
 [[package]]
 name = "mcp-workflow"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "reqwest",
  "robotstxt",
@@ -2172,7 +2172,7 @@ dependencies = [
 
 [[package]]
 name = "ndk"
-version = "0.10.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3f42e7bbe13d351b6bead8286a43aac9534b82bd3cc43e47037f012ebfd62d4"
 dependencies = [
@@ -3095,7 +3095,7 @@ dependencies = [
 
 [[package]]
 name = "schemars"
-version = "0.10.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4cd191f9397d57d581cddd31014772520aa448f65ef991055d7f61582c65165f"
 dependencies = [
@@ -3326,7 +3326,7 @@ dependencies = [
  "indexmap 1.9.3",
  "indexmap 2.14.2",
  "jiff",
- "schemars 0.10.0",
+ "schemars 0.9.0",
  "schemars 1.2.3",
  "serde_core",
  "serde_json",
@@ -3509,7 +3509,7 @@ checksum = "ff7589a1859b09232522bb9edf076ca7fcf14ded96685d3fa629db73023ffbb7"
 
 [[package]]
 name = "string_cache"
-version = "0.10.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a18596f8c785a729f2819c0f6a7eae6ebeebdfffbfe4214ae6b087f690e31901"
 dependencies = [
@@ -4596,7 +4596,7 @@ checksum = "ba8b815c1b593dc0baf78dd0f4fc8fdb2de53198fb1163738093e9a311c33fb3"
 dependencies = [
  "phf 0.13.1",
  "phf_codegen 0.13.1",
- "string_cache 0.10.0",
+ "string_cache 0.9.0",
  "string_cache_codegen 0.6.1",
 ]
 

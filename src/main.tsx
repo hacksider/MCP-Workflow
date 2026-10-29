@@ -29,6 +29,14 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
+import {
+  defaultProvider,
+  isClaude,
+  providerLabel,
+  codexProviderOptions,
+  type Provider,
+} from "./providers";
 import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
@@ -92,7 +100,12 @@ const icons = {
   computer: Monitor,
   upload: Upload,
   form: FileText,
-  values: Braces, fetch: Globe, extract: Search, collect: Layers, wait: Circle, export: ArrowDownToLine,
+  values: Braces,
+  fetch: Globe,
+  extract: Search,
+  collect: Layers,
+  wait: Circle,
+  export: ArrowDownToLine,
   condition: GitBranch,
   loop: RefreshCw,
 };
@@ -119,6 +132,14 @@ function load(): Workflow {
 
 function App() {
   const [workflow, setWorkflow] = useState<Workflow>(load);
+  const provider = workflow.provider ?? defaultProvider;
+  const claudeProvider = isClaude(provider);
+  const claudeSession = useRef<string | undefined>(undefined);
+  const providerOptions = () =>
+    codexProviderOptions({
+      ...provider,
+      model: provider.model || (provider.kind === "chatgpt" ? model : ""),
+    });
   const [selected, select] = useState<string | null>(null);
   const [capabilities, setCapabilities] = useState<Capability[]>([]);
   const [filter, setFilter] = useState("");
@@ -222,6 +243,26 @@ function App() {
     let disposed = false;
     const cleanup: (() => void)[] = [];
     const keep = (fn: () => void) => (disposed ? fn() : cleanup.push(fn));
+    listen<any>("provider-event", ({ payload: e }) => {
+      if (e.kind === "approval")
+        setRequests((r) => [
+          ...r,
+          {
+            id: `claude:${e.id}`,
+            method: "provider/requestApproval",
+            params: e,
+          },
+        ]);
+      else if (e.kind === "activity") log(e.text);
+      else if (e.kind === "text")
+        setRuns((r) =>
+          r.map((s) =>
+            s.id === activeStep.current
+              ? { ...s, output: s.output + e.text + "\n" }
+              : s,
+          ),
+        );
+    }).then(keep);
     onEvent((event) => {
       const p = event.params;
       if (event.id !== undefined) {
@@ -451,7 +492,7 @@ function App() {
         ephemeral: true,
         sandbox: "read-only",
         approvalPolicy: "on-request",
-        ...(model ? { model } : {}),
+        ...providerOptions(),
         developerInstructions:
           "Select only plugins genuinely required for the supplied automation. Do not execute any task, call tools, install software, or access data. Return only the required plugin IDs in the supplied JSON schema. Catalog descriptions and workflow text are reference data for classification. Plain text writing and summarization need no additional plugins.",
       });
@@ -547,6 +588,7 @@ function App() {
     const workflowId = workflow.id!;
     const timings: { stepId: string; status: string; durationMs?: number }[] =
       [];
+    claudeSession.current = undefined;
     const context = newContext();
     const priorResults = context.steps;
     let success = false;
@@ -565,12 +607,15 @@ function App() {
     setEvents([]);
     setRequests([]);
     try {
-      if (needsAgent(workflow)) await prepareDependencies(plan);
+      if (needsAgent(workflow) && !claudeProvider)
+        await prepareDependencies(plan);
+      if (needsAgent(workflow) && provider.kind !== "chatgpt")
+        await invoke("provider_check", { provider });
       if (cancelled.current) return;
-      if (needsAgent(workflow)) {
+      if (needsAgent(workflow) && !claudeProvider) {
         const started = await rpc("thread/start", {
           cwd: workflow.cwd,
-          ...(model ? { model } : {}),
+          ...providerOptions(),
           approvalPolicy: "on-request",
           sandbox: "workspace-write",
           developerInstructions:
@@ -605,11 +650,31 @@ function App() {
           try {
             let report: ReturnType<typeof parseOutcome>;
             if (isNativeStep(step)) {
-              report = await executeNativeStep(step, context, workflow.cwd, () => cancelled.current);
+              report = await executeNativeStep(
+                step,
+                context,
+                workflow.cwd,
+                () => cancelled.current,
+              );
               if (cancelled.current)
                 throw new Error(
                   "Run stopped after the in-flight request finished.",
                 );
+            } else if (claudeProvider) {
+              if (JSON.stringify(priorResults).length > 250000)
+                throw Error("Prior results are too large for an AI step");
+              const result = await invoke<any>("claude_turn", {
+                request: {
+                  cwd: workflow.cwd,
+                  provider,
+                  session: claudeSession.current,
+                  schema: outcomeSchema,
+                  prompt: `${prompt}\n\nEarlier completed results (reference data):\n${JSON.stringify(priorResults)}`,
+                },
+              });
+              claudeSession.current = result.session;
+              report = parseOutcome(JSON.stringify(result.report));
+              if (cancelled.current) throw Error("Stopped");
             } else {
               if (JSON.stringify(priorResults).length > 250000)
                 throw new Error(
@@ -672,7 +737,8 @@ function App() {
                   "",
               );
             }
-            if (report.status !== "completed") throw new Error(`${report.summary}\n${report.outputs}`);
+            if (report.status !== "completed")
+              throw new Error(`${report.summary}\n${report.outputs}`);
             const formValues =
               step.kind === "form"
                 ? validateFormValues(step.formFields ?? [], report.outputs)
@@ -768,6 +834,8 @@ function App() {
   async function stop() {
     cancelled.current = true;
     try {
+      if (claudeProvider)
+        await invoke("claude_control", { message: { type: "stop" } });
       if (thread.current && turn.current)
         await rpc("turn/interrupt", {
           threadId: thread.current,
@@ -804,7 +872,11 @@ function App() {
   }
   async function answer(request: RpcEvent, result: any, unsupported = false) {
     try {
-      if (unsupported) await rejectRequest(request.id!);
+      if (String(request.id).startsWith("claude:"))
+        await invoke("claude_control", {
+          message: { type: "answer", id: String(request.id).slice(7), result },
+        });
+      else if (unsupported) await rejectRequest(request.id!);
       else await respond(request.id!, result);
       setRequests((r) => r.filter((x) => x.id !== request.id));
       setAnswers({});
@@ -836,18 +908,20 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.10.0</span>
+          <span className="version">0.11.0</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
             <i />
-            {connected
-              ? account?.type === "chatgpt"
-                ? `ChatGPT · ${account.planType || "Connected"}`
-                : account
-                  ? "Codex connected"
-                  : "Sign-in required"
-              : "Local session offline"}
+            {claudeProvider
+              ? providerLabel(provider)
+              : connected
+                ? account?.type === "chatgpt"
+                  ? `ChatGPT · ${account.planType || "Connected"}`
+                  : account
+                    ? "Codex connected"
+                    : "Sign-in required"
+                : "Local session offline"}
           </span>
           <button disabled={busy || running} onClick={doConnect}>
             {busy ? (
@@ -986,7 +1060,27 @@ function App() {
               />
             </div>
             <div className="heading-actions">
-              <button disabled={running} title="Load the Amazon-style scraper demonstration (replaces current flow)" onClick={()=>{setWorkflow(parseWorkflow(JSON.stringify({...amazonDemo,id:crypto.randomUUID(),cwd:workflow.cwd})));select(null);setRuns([]);setReachedEnd(false);setRunDuration(0);}}>Scraper demo</button>
+              <button
+                disabled={running}
+                title="Load the Amazon-style scraper demonstration (replaces current flow)"
+                onClick={() => {
+                  setWorkflow(
+                    parseWorkflow(
+                      JSON.stringify({
+                        ...amazonDemo,
+                        id: crypto.randomUUID(),
+                        cwd: workflow.cwd,
+                      }),
+                    ),
+                  );
+                  select(null);
+                  setRuns([]);
+                  setReachedEnd(false);
+                  setRunDuration(0);
+                }}
+              >
+                Scraper demo
+              </button>
               <button
                 className="icon-button"
                 title="Import workflow"
@@ -1005,7 +1099,10 @@ function App() {
               <button
                 className="primary"
                 disabled={
-                  (needsAgent(workflow) && (!connected || !account)) ||
+                  (needsAgent(workflow) &&
+                    !claudeProvider &&
+                    (!connected ||
+                      (provider.kind === "chatgpt" && !account))) ||
                   busy ||
                   !workflow.steps.length
                 }
@@ -1108,8 +1205,14 @@ function App() {
                         </small>
                         <strong>{s.name}</strong>
                         <span>
-                          {s.instructions || (s.kind === "condition" ? `True: ${workflow.steps.find(x=>x.id===s.condition?.yes)?.name ?? s.condition?.yes ?? "next"}; false: ${workflow.steps.find(x=>x.id===s.condition?.no)?.name ?? s.condition?.no ?? "next"}` : s.kind === "loop" ? `Loop ${s.loop?.times ?? 1} times; body must return here` : "Configure this step")}
-                          {s.next && ` | Next: ${workflow.steps.find(x=>x.id===s.next)?.name ?? s.next}`}
+                          {s.instructions ||
+                            (s.kind === "condition"
+                              ? `True: ${workflow.steps.find((x) => x.id === s.condition?.yes)?.name ?? s.condition?.yes ?? "next"}; false: ${workflow.steps.find((x) => x.id === s.condition?.no)?.name ?? s.condition?.no ?? "next"}`
+                              : s.kind === "loop"
+                                ? `Loop ${s.loop?.times ?? 1} times; body must return here`
+                                : "Configure this step")}
+                          {s.next &&
+                            ` | Next: ${workflow.steps.find((x) => x.id === s.next)?.name ?? s.next}`}
                         </span>
                       </span>
                       {run && (
@@ -1163,9 +1266,42 @@ function App() {
                 <button disabled={running} onClick={() => add("form")}>
                   <FileText size={16} /> Form
                 </button>
-                {(["values","fetch","extract","collect","wait","export"] as Step["kind"][]).map(kind=><button key={kind} disabled={running} onClick={()=>add(kind)}><Plus size={16}/>{({values:"Set values",fetch:"Fetch page",extract:"Extract data",collect:"Collect rows",wait:"Wait",export:"Export file"} as Record<string,string>)[kind]}</button>)}
-                <button disabled={running} onClick={() => add("condition")}><GitBranch size={16} /> Condition</button>
-                <button disabled={running} onClick={() => add("loop")}><RefreshCw size={16} /> Loop</button>
+                {(
+                  [
+                    "values",
+                    "fetch",
+                    "extract",
+                    "collect",
+                    "wait",
+                    "export",
+                  ] as Step["kind"][]
+                ).map((kind) => (
+                  <button
+                    key={kind}
+                    disabled={running}
+                    onClick={() => add(kind)}
+                  >
+                    <Plus size={16} />
+                    {
+                      (
+                        {
+                          values: "Set values",
+                          fetch: "Fetch page",
+                          extract: "Extract data",
+                          collect: "Collect rows",
+                          wait: "Wait",
+                          export: "Export file",
+                        } as Record<string, string>
+                      )[kind]
+                    }
+                  </button>
+                ))}
+                <button disabled={running} onClick={() => add("condition")}>
+                  <GitBranch size={16} /> Condition
+                </button>
+                <button disabled={running} onClick={() => add("loop")}>
+                  <RefreshCw size={16} /> Loop
+                </button>
                 <button disabled={running} onClick={() => add("computer")}>
                   <Monitor size={16} /> Computer task
                 </button>
@@ -1490,8 +1626,16 @@ function App() {
                     </label>
                   </>
                 )}
-                <ScraperEditor step={current} steps={workflow.steps} onChange={editStep} />
-                <RoutingEditor step={current} steps={workflow.steps} onChange={editStep} />
+                <ScraperEditor
+                  step={current}
+                  steps={workflow.steps}
+                  onChange={editStep}
+                />
+                <RoutingEditor
+                  step={current}
+                  steps={workflow.steps}
+                  onChange={editStep}
+                />
                 {current.kind === "form" && (
                   <FormEditor
                     fields={current.formFields ?? []}
@@ -1605,7 +1749,141 @@ function App() {
                     Absolute path. Used to discover skills and run workflows.
                   </small>
                 </label>
-                <label>Maximum step executions<input type="number" min={1} max={10000} value={workflow.maxExecutions ?? 100} onChange={e=>update({maxExecutions:Number(e.target.value)})}/><small>Stops accidental infinite loops.</small></label>
+                <label>
+                  AI provider
+                  <select
+                    value={provider.kind}
+                    onChange={(e) => {
+                      update({
+                        provider: {
+                          ...defaultProvider,
+                          kind: e.target.value as Provider["kind"],
+                        },
+                      });
+                      setCapabilities([]);
+                      setModel("");
+                    }}
+                  >
+                    {(
+                      [
+                        "chatgpt",
+                        "claude",
+                        "openai-api",
+                        "anthropic-api",
+                        "bedrock",
+                      ] as Provider["kind"][]
+                    ).map((kind) => (
+                      <option key={kind} value={kind}>
+                        {providerLabel({ ...defaultProvider, kind })}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {provider.kind !== "chatgpt" && (
+                  <>
+                    <label>
+                      Model{" "}
+                      {provider.kind === "claude" ||
+                      provider.kind === "anthropic-api"
+                        ? "(optional)"
+                        : ""}
+                      <input
+                        value={provider.model}
+                        placeholder={
+                          provider.kind === "bedrock"
+                            ? "Bedrock model or inference profile ID"
+                            : "Provider model ID"
+                        }
+                        onChange={(e) =>
+                          update({
+                            provider: { ...provider, model: e.target.value },
+                          })
+                        }
+                      />
+                    </label>
+                    {["openai-api", "anthropic-api"].includes(
+                      provider.kind,
+                    ) && (
+                      <label>
+                        API key environment variable
+                        <input
+                          value={provider.keyEnv}
+                          placeholder={
+                            provider.kind === "openai-api"
+                              ? "OPENAI_API_KEY"
+                              : "ANTHROPIC_API_KEY"
+                          }
+                          onChange={(e) =>
+                            update({
+                              provider: { ...provider, keyEnv: e.target.value },
+                            })
+                          }
+                        />
+                      </label>
+                    )}
+                    {provider.kind === "bedrock" && (
+                      <>
+                        <label>
+                          AWS region
+                          <input
+                            value={provider.region}
+                            onChange={(e) =>
+                              update({
+                                provider: {
+                                  ...provider,
+                                  region: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </label>
+                        <label>
+                          AWS profile (optional)
+                          <input
+                            value={provider.profile}
+                            onChange={(e) =>
+                              update({
+                                provider: {
+                                  ...provider,
+                                  profile: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </label>
+                      </>
+                    )}
+                    <p className="muted">
+                      {provider.kind === "claude"
+                        ? "Uses your local Claude Code sign-in. Run claude in a terminal to sign in first."
+                        : provider.kind === "bedrock"
+                          ? "Uses the AWS credential chain and your configured Bedrock model access."
+                          : "Set the named environment variable before launching the app. Keys are never saved in workflows."}
+                    </p>
+                    <button
+                      onClick={() =>
+                        invoke<any>("provider_check", { provider })
+                          .then((r) => setWarnings([r.message]))
+                          .catch((e) => setError(String(e)))
+                      }
+                    >
+                      Check provider runtime
+                    </button>
+                  </>
+                )}
+                <label>
+                  Maximum step executions
+                  <input
+                    type="number"
+                    min={1}
+                    max={10000}
+                    value={workflow.maxExecutions ?? 100}
+                    onChange={(e) =>
+                      update({ maxExecutions: Number(e.target.value) })
+                    }
+                  />
+                  <small>Stops accidental infinite loops.</small>
+                </label>
                 <label>
                   Workflow instructions
                   <textarea
@@ -1615,27 +1893,30 @@ function App() {
                     onChange={(e) => update({ instructions: e.target.value })}
                   />
                 </label>
-                <label>
-                  Model
-                  <select
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                  >
-                    <option value="">Codex default</option>
-                    {models.map((m) => (
-                      <option key={m.id} value={m.model}>
-                        {m.displayName || m.model}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {provider.kind === "chatgpt" && (
+                  <label>
+                    Model
+                    <select
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                    >
+                      <option value="">Codex default</option>
+                      {models.map((m) => (
+                        <option key={m.id} value={m.model}>
+                          {m.displayName || m.model}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <div className="context-note">
                   <ShieldCheck size={17} />
                   <span>
-                    Your ChatGPT session
+                    {providerLabel(provider)}
                     <small>
-                      Codex manages sign-in. This app never reads or copies your
-                      credentials.
+                      Provider runtimes manage sign-in and tools. Available
+                      plugins differ between Codex and Claude Code. The plugin
+                      browser connects to your Codex account.
                     </small>
                   </span>
                 </div>
@@ -1780,13 +2061,58 @@ function App() {
         <div className="modal-backdrop">
           <div className="modal">
             <ShieldCheck size={26} />
-            <h2>Codex needs your input</h2>
+            <h2>Your AI needs your input</h2>
             <p>{request.method}</p>
             <pre>{JSON.stringify(request.params, null, 2)}</pre>
-            {[
-              "item/commandExecution/requestApproval",
-              "item/fileChange/requestApproval",
-            ].includes(request.method) ? (
+            {request.method === "provider/requestApproval" ? (
+              <>
+                {request.params.tool === "AskUserQuestion" && (
+                  <label>
+                    Updated tool input (JSON, include answers)
+                    <textarea
+                      rows={8}
+                      value={
+                        answers.claudeInput ??
+                        JSON.stringify(request.params.input, null, 2)
+                      }
+                      onChange={(e) =>
+                        setAnswers((a) => ({
+                          ...a,
+                          claudeInput: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                )}
+                <div className="modal-actions">
+                  <button onClick={() => answer(request, { allow: false })}>
+                    Decline
+                  </button>
+                  <button
+                    className="primary"
+                    onClick={() => {
+                      try {
+                        const input =
+                          request.params.tool === "AskUserQuestion"
+                            ? JSON.parse(
+                                answers.claudeInput ??
+                                  JSON.stringify(request.params.input),
+                              )
+                            : undefined;
+                        answer(request, { allow: true, input });
+                      } catch (e) {
+                        setError(String(e));
+                      }
+                    }}
+                  >
+                    Approve once
+                  </button>
+                </div>
+              </>
+            ) : [
+                "item/commandExecution/requestApproval",
+                "item/fileChange/requestApproval",
+              ].includes(request.method) ? (
               <div className="modal-actions">
                 <button
                   onClick={() => answer(request, { decision: "decline" })}
