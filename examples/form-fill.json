@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "name": "Fill a customer form",
+  "description": "Turn example facts into a reusable structured form.",
+  "cwd": "",
+  "instructions": "Use only the fictional facts supplied in the first step. Do not contact anyone or submit the form anywhere.",
+  "steps": [
+    {"id":"facts","kind":"instruction","name":"Read the example facts","instructions":"The fictional customer is Alex Example, email alex@example.com, requesting 3 seats. Summarize these facts for the form step.","endpoint":"","documentation":"","repeat":1},
+    {"id":"form","kind":"form","name":"Fill the form","instructions":"Fill the form using the previous step's fictional customer facts.","endpoint":"","documentation":"","repeat":1,"formFields":[{"id":"name","label":"Customer name","type":"text","required":true},{"id":"email","label":"Email","type":"email","required":true},{"id":"seats","label":"Seats","type":"number","required":true}]}
+  ]
+}

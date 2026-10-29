@@ -74,6 +74,8 @@ import {
   validatePluginSelection,
   type Plugin,
 } from "./plugins";
+import { FormEditor, FormResult } from "./FormFlow";
+import { validateFormValues, type FormField } from "./workflow";
 
 const storageKey = "mcp-workflow.v1";
 const icons = {
@@ -85,6 +87,7 @@ const icons = {
   app: Layers,
   computer: Monitor,
   upload: Upload,
+  form: FileText,
 };
 type StepState = "running" | "completed" | "failed" | "interrupted";
 type Run = {
@@ -95,6 +98,9 @@ type Run = {
   status: StepState;
   startedAt: number;
   durationMs?: number;
+  formFields?: FormField[];
+  formValues?: Record<string, unknown>;
+  summary?: string;
 };
 function load(): Workflow {
   try {
@@ -459,7 +465,7 @@ function App() {
               sharedInstructions: workflow.instructions,
               steps: plan.map((p) => ({
                 name: p.step.name,
-                  files: p.step.files?.map(f=>f.name),
+                files: p.step.files?.map((f) => f.name),
                 instructions: p.step.instructions,
                 kind: p.step.kind,
               })),
@@ -640,12 +646,19 @@ function App() {
                   .at(-1)?.text ||
                 "",
             );
+            const formValues =
+              step.kind === "form"
+                ? validateFormValues(step.formFields ?? [], report.outputs)
+                : undefined;
             timing.status = "completed";
             setRuns((r) =>
               r.map((s) =>
                 s.id === runId
                   ? {
                       ...s,
+                      formValues,
+                      formFields: step.formFields,
+                      summary: report.summary,
                       status:
                         report.status === "completed" ? "completed" : "failed",
                       output: [report.summary, report.outputs]
@@ -785,7 +798,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.6.0</span>
+          <span className="version">0.7.0</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -1105,6 +1118,9 @@ function App() {
                 <button disabled={running} onClick={() => add("upload")}>
                   <Upload size={16} /> Upload
                 </button>
+                <button disabled={running} onClick={() => add("form")}>
+                  <FileText size={16} /> Form
+                </button>
                 <button disabled={running} onClick={() => add("computer")}>
                   <Monitor size={16} /> Computer task
                 </button>
@@ -1178,7 +1194,17 @@ function App() {
                         {formatDuration(r.durationMs ?? now - r.startedAt)}
                       </small>
                     </summary>
-                    <pre>{r.output || "Waiting for Codex…"}</pre>
+                    {r.formValues ? (
+                      <>
+                        <pre>{r.summary}</pre>
+                        <FormResult
+                          fields={r.formFields ?? []}
+                          values={r.formValues}
+                        />
+                      </>
+                    ) : (
+                      <pre>{r.output || "Waiting for Codex…"}</pre>
+                    )}
                   </details>
                 ))}
                 {events.length > 0 && (
@@ -1315,6 +1341,12 @@ function App() {
                       />
                     </label>
                   </>
+                )}
+                {current.kind === "form" && (
+                  <FormEditor
+                    fields={current.formFields ?? []}
+                    onChange={(formFields) => editStep({ formFields })}
+                  />
                 )}
                 <label>
                   Repeat count
