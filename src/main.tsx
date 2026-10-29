@@ -53,6 +53,13 @@ import {
   type Workflow,
 } from "./workflow";
 import "./style.css";
+import {
+  averageDuration,
+  emptyMetrics,
+  finishMetrics,
+  formatDuration,
+  type WorkflowMetrics,
+} from "./metrics";
 
 const storageKey = "mcp-workflow.v1";
 const icons = {
@@ -70,6 +77,8 @@ type Run = {
   name: string;
   output: string;
   status: StepState;
+  startedAt: number;
+  durationMs?: number;
 };
 function load(): Workflow {
   try {
@@ -90,6 +99,23 @@ function App() {
   const [busy, setBusy] = useState(false);
   const [running, setRunning] = useState(false);
   const [runTotal, setRunTotal] = useState(0);
+  const [metrics, setMetrics] = useState<Record<string, WorkflowMetrics>>(
+    () => {
+      try {
+        return JSON.parse(
+          localStorage.getItem("mcp-workflow.metrics.v1") || "{}",
+        );
+      } catch {
+        return {};
+      }
+    },
+  );
+  const [now, setNow] = useState(performance.now());
+  const [runDuration, setRunDuration] = useState(0);
+  const [reachedEnd, setReachedEnd] = useState(false);
+  const [activeFlow, setActiveFlow] = useState<string | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const runStarted = useRef(0);
   const [runs, setRuns] = useState<Run[]>([]);
   const [error, setError] = useState("");
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -110,6 +136,7 @@ function App() {
   const waiter = useRef<((turn: any) => void) | null>(null);
   const importInput = useRef<HTMLInputElement>(null);
   const current = workflow.steps.find((s) => s.id === selected);
+  const stats = metrics[workflow.id!] ?? emptyMetrics();
   const update = (patch: Partial<Workflow>) =>
     setWorkflow((w) => ({ ...w, ...patch }));
   const editStep = (patch: Partial<Step>) =>
@@ -125,6 +152,28 @@ function App() {
   };
   const log = (message: string) => setEvents((e) => [...e.slice(-99), message]);
 
+  useEffect(() => {
+    if (activeFlow)
+      document
+        .getElementById(`flow-step-${activeFlow}`)
+        ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [activeFlow]);
+  useEffect(() => {
+    if (reachedEnd)
+      endRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [reachedEnd]);
+  useEffect(() => {
+    try {
+      localStorage.setItem("mcp-workflow.metrics.v1", JSON.stringify(metrics));
+    } catch {
+      setSaveError("Could not save run statistics on this device.");
+    }
+  }, [metrics]);
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(() => setNow(performance.now()), 250);
+    return () => clearInterval(timer);
+  }, [running]);
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(workflow));
@@ -296,6 +345,21 @@ function App() {
     cancelled.current = false;
     setRunning(true);
     setRunTotal(plan.length);
+    const workflowId = workflow.id!;
+    const timings: { stepId: string; status: string; durationMs?: number }[] =
+      [];
+    let success = false;
+    runStarted.current = performance.now();
+    setNow(runStarted.current);
+    setRunDuration(0);
+    setReachedEnd(false);
+    setMetrics((all) => ({
+      ...all,
+      [workflowId]: {
+        ...(all[workflowId] ?? emptyMetrics()),
+        runs: (all[workflowId]?.runs ?? 0) + 1,
+      },
+    }));
     setRuns([]);
     setEvents([]);
     setRequests([]);
@@ -312,7 +376,11 @@ function App() {
       await runSequential(
         plan,
         async ({ id: runId, step, iteration, total, prompt }) => {
+          const attemptStarted = performance.now();
+          const timing = { stepId: step.id, status: "running", durationMs: 0 };
+          timings.push(timing);
           activeStep.current = runId;
+          setActiveFlow(step.id);
           finalAnswer.current = "";
           completionGuard.current = new CompletionGuard();
           select(step.id);
@@ -325,6 +393,7 @@ function App() {
                 total > 1 ? `${step.name} (${iteration}/${total})` : step.name,
               output: "",
               status: "running",
+              startedAt: attemptStarted,
             },
           ]);
           const completion = new Promise<any>((resolve) => {
@@ -384,6 +453,7 @@ function App() {
                   .at(-1)?.text ||
                 "",
             );
+            timing.status = "completed";
             setRuns((r) =>
               r.map((s) =>
                 s.id === runId
@@ -399,6 +469,7 @@ function App() {
               ),
             );
           } catch (e) {
+            timing.status = cancelled.current ? "interrupted" : "failed";
             setRuns((r) =>
               r.map((s) =>
                 s.id === runId && s.status === "running"
@@ -407,10 +478,19 @@ function App() {
               ),
             );
             throw e;
+          } finally {
+            timing.durationMs = performance.now() - attemptStarted;
+            setRuns((r) =>
+              r.map((s) =>
+                s.id === runId ? { ...s, durationMs: timing.durationMs } : s,
+              ),
+            );
           }
         },
         () => cancelled.current,
       );
+      success = !cancelled.current;
+      setReachedEnd(success);
       log(
         cancelled.current
           ? "Workflow stopped."
@@ -419,8 +499,20 @@ function App() {
     } catch (e) {
       setError(String(e));
     } finally {
+      const elapsed = performance.now() - runStarted.current;
+      setRunDuration(elapsed);
+      setMetrics((all) => ({
+        ...all,
+        [workflowId]: finishMetrics(
+          all[workflowId] ?? emptyMetrics(),
+          elapsed,
+          success,
+          timings,
+        ),
+      }));
       runningLock.current = false;
       setRunning(false);
+      setActiveFlow(null);
       waiter.current = null;
       activeStep.current = null;
       turn.current = null;
@@ -457,6 +549,8 @@ function App() {
       setWorkflow(parseWorkflow(await file.text()));
       select(null);
       setRuns([]);
+      setReachedEnd(false);
+      setRunDuration(0);
     } catch (e) {
       setError(String(e));
     }
@@ -495,7 +589,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.2.0</span>
+          <span className="version">0.3.0</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -723,6 +817,10 @@ function App() {
                 return (
                   <React.Fragment key={s.id}>
                     <button
+                      id={`flow-step-${s.id}`}
+                      aria-current={
+                        run?.status === "running" ? "step" : undefined
+                      }
                       className={`step-card ${selected === s.id ? "selected" : ""} ${run?.status || ""}`}
                       onClick={() => {
                         select(s.id);
@@ -750,6 +848,13 @@ function App() {
                           {s.instructions || "Add instructions for this step"}
                         </span>
                       </span>
+                      {run && (
+                        <small className="step-timer">
+                          {formatDuration(
+                            run.durationMs ?? now - run.startedAt,
+                          )}
+                        </small>
+                      )}
                       {run?.status === "running" ? (
                         <LoaderCircle className="spin" size={17} />
                       ) : run?.status === "completed" ? (
@@ -788,8 +893,12 @@ function App() {
                   <Globe size={16} /> API flow
                 </button>
               </div>
-              <div className="flow-end">
-                <Circle size={8} /> END OF WORKFLOW
+              <div
+                ref={endRef}
+                className={`flow-end ${reachedEnd ? "completed" : ""}`}
+              >
+                <Circle size={8} />{" "}
+                {reachedEnd ? "WORKFLOW COMPLETED" : "END OF WORKFLOW"}
               </div>
             </div>
           </div>
@@ -804,6 +913,30 @@ function App() {
                   ? `${runs.filter((r) => r.status === "completed").length} of ${runTotal} completed`
                   : "Ready when you are"}
               </small>
+            </div>
+            <div className="run-statistics" aria-live="polite">
+              <span>
+                Total runs <b>{stats.runs}</b>
+              </span>
+              <span>
+                Successful <b>{stats.completed}</b>
+              </span>
+              <span>
+                {running ? "Elapsed" : "Run duration"}{" "}
+                <b>
+                  {formatDuration(
+                    running ? now - runStarted.current : runDuration,
+                  )}
+                </b>
+              </span>
+              <span>
+                All runs{" "}
+                <b>
+                  {formatDuration(
+                    stats.elapsedMs + (running ? now - runStarted.current : 0),
+                  )}
+                </b>
+              </span>
             </div>
             {!runs.length ? (
               <p className="run-placeholder">
@@ -824,7 +957,10 @@ function App() {
                         )}
                       </span>
                       {r.name}
-                      <small>{r.status}</small>
+                      <small>
+                        {r.status} ·{" "}
+                        {formatDuration(r.durationMs ?? now - r.startedAt)}
+                      </small>
                     </summary>
                     <pre>{r.output || "Waiting for Codex…"}</pre>
                   </details>
@@ -837,6 +973,31 @@ function App() {
                     <pre>{events.join("\n")}</pre>
                   </details>
                 )}
+              </div>
+            )}
+            {workflow.steps.length > 0 && (
+              <div className="timing-summary">
+                <table>
+                  <caption>Step averages · successful repetitions</caption>
+                  <thead>
+                    <tr>
+                      <th>Step</th>
+                      <th>Runs</th>
+                      <th>Completed</th>
+                      <th>Average</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workflow.steps.map((s) => (
+                      <tr key={s.id}>
+                        <td>{s.name}</td>
+                        <td>{stats.steps[s.id]?.attempts ?? 0}</td>
+                        <td>{stats.steps[s.id]?.completed ?? 0}</td>
+                        <td>{averageDuration(stats.steps[s.id])}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </section>

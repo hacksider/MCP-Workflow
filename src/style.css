@@ -570,6 +570,87 @@ main {
 .step-card.completed {
   border-color: #b4cfb0;
 }
+.step-card.running {
+  border-color: #4d9968;
+  background: #f4fbef;
+  animation: active-flow-glow 1.6s ease-in-out infinite;
+}
+@keyframes active-flow-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px #75b45c30,
+      0 0 16px #80b56d25;
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px #75b45c48,
+      0 0 28px #80b56d60;
+  }
+}
+.step-timer {
+  font-variant-numeric: tabular-nums;
+  color: #5f8769;
+}
+.flow-end.completed {
+  color: #367447;
+  font-weight: 700;
+}
+.flow-end.completed svg {
+  fill: #70ac62;
+  box-shadow: 0 0 12px #70ac62;
+  border-radius: 50%;
+}
+.run-statistics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding: 0 26px 12px;
+  color: #7d8d82;
+  font-size: 10px;
+}
+.run-statistics b {
+  font-weight: 600;
+  color: #42684d;
+  margin-left: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.timing-summary {
+  padding: 0 26px 16px;
+}
+.timing-summary table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 10px;
+  color: #6a7f70;
+}
+.timing-summary caption {
+  text-align: left;
+  font-size: 10px;
+  color: #6a7f70;
+  margin: 10px 0;
+}
+.timing-summary th,
+.timing-summary td {
+  padding: 7px 8px;
+  border-top: 1px solid #edf0ee;
+}
+.timing-summary th {
+  font-weight: 500;
+  color: #8a9a8e;
+}
+.timing-summary td:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  .step-card.running {
+    animation: none;
+    box-shadow:
+      0 0 0 3px #75b45c40,
+      0 0 18px #80b56d40;
+  }
+}
 .step-card.failed {
   border-color: #d3a4a4;
 }

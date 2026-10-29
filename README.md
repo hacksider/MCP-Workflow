@@ -1,6 +1,6 @@
 # MCP Workflow
 
-Version **0.2.0**. A Tauri 2 desktop workflow studio using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.3.0**. A Tauri 2 desktop workflow studio using React, TypeScript, and a Rust bridge to local Codex app-server.
 
 Build repeatable AI workflows from the skills, plugins, and apps your local Codex session can access. Add open-ended instructions to each step, carry context through the flow, and describe API operations in plain language alongside their documentation. Codex automatically chooses the underlying tools needed to execute your instructions. The purpose is to make these capabilities usable as an ordered, inspectable process with visible results and approvals.
 
@@ -57,6 +57,12 @@ Use **Run again** to replay a saved workflow from the beginning. Each run uses a
 
 Only one execution can start at a time. The executor awaits each repetition's turn completion, validates its structured successful outcome, and checks protocol-reported agent and tool work before advancing. The AI is instructed to wait for delegated agents and background operations and collect their results before declaring completion. If reported work is still running, interrupted, or unsuccessful, the workflow stops rather than launching the next step. These checks cover work visible through the Codex protocol; arbitrary external background processes cannot be independently verified. Failed, blocked, malformed, or interrupted outcomes stop the sequence, and Stop prevents further repetitions or steps.
 
+## Live progress and run statistics
+
+The active step pulses with a green glow and shows its elapsed time. The canvas follows the active step and lights the end marker only when the whole workflow succeeds. Reduced-motion preferences keep the highlight steady. The output console shows live elapsed time for each repetition, its final duration, and the current workflow's total duration. Timing includes time spent waiting for the AI, tools, and approvals; it is measured elapsed time, not an estimated finish time.
+
+The console also shows total workflow runs started, successful workflow runs, cumulative elapsed time across all runs, and a table of step attempts, completions, and average successful completion times. Each repetition counts as one step attempt. Failed/interrupted attempts count toward attempts but not successful averages. Aggregate statistics are saved locally per workflow ID and survive restarting the app. Exported definitions preserve workflow IDs, but statistics are stored separately and are not included in JSON exports. Old definitions receive an ID when loaded. Full output logs remain session-only.
+
 ## Connection scope and API execution
 
 The integration uses [Codex app-server](https://learn.chatgpt.com/docs/app-server), not a connection back into this development chat. Discovery reflects the local Codex process, workspace, account, configuration, and enabled plugins. ChatGPT-only connectors and plugins are not automatically transferable. Configure the corresponding MCP server or Codex plugin separately when missing. Discovery reports partial errors rather than inventing capabilities.
@@ -77,6 +83,8 @@ npm run desktop:build
 The smoke check performs account and capability discovery only; it does not start inference or print credentials. `desktop:build` produces the Windows executable and NSIS installer under `src-tauri/target/release/`. Other operating systems require their own builds and bundle-target configuration. Codex must be installed on the destination machine; it is not bundled. App-server protocol availability varies by Codex version; update Codex if a method is unsupported.
 
 Initial verification on Windows with Codex `0.165.0-alpha.1.2`: production frontend build, five workflow validation tests, Rust compilation, read-only account/capability discovery, and a real two-step ChatGPT-backed run with conversation continuity. The UI screenshots above are from this desktop run. API calls depend on each API's documentation, authentication, and available tools; no authenticated third-party API write was performed during verification.
+
+Repeat and timing coverage now includes 17 tests for immutable execution plans, ordered repetitions, delayed completions, cancellation, failed/blocked outcomes, unfinished agents/tools, import compatibility, and timing averages across reruns.
 
 ## Project maintenance
 
