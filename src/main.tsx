@@ -908,7 +908,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.11.1</span>
+          <span className="version">0.11.2</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
