@@ -5,6 +5,7 @@ export type Capability = {
   kind: "skill" | "plugin" | "tool" | "app";
   path?: string;
   server?: string;
+  pluginId?: string;
   enabled: boolean;
 };
 export type Step = {
@@ -271,6 +272,7 @@ export function normalizeCapabilities(
         description: s.description,
         kind: "skill",
         path: s.path,
+        pluginId: s.pluginId ?? undefined,
         enabled: s.enabled !== false,
       });
   for (const m of plugins?.marketplaces ?? [])
@@ -279,6 +281,7 @@ export function normalizeCapabilities(
         result.push({
           id: `plugin:${p.id}`,
           name: p.interface?.displayName || p.name,
+          pluginId: p.id,
           description:
             p.interface?.shortDescription || "Installed Codex plugin",
           kind: "plugin",

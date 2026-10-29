@@ -13,6 +13,9 @@ export async function rpc<T = any>(
   return invoke<T>("rpc", { method, params });
 }
 export const connect = () => invoke<any>("connect");
+export const listPlugins = () => invoke<any>("plugin_catalog");
+export const installPlugin = (pluginId: string, force = true) =>
+  invoke<any>("install_plugin", { pluginId, force });
 export const respond = (id: number | string, result: any) =>
   invoke("respond", { id, result });
 export const rejectRequest = (id: number | string) =>

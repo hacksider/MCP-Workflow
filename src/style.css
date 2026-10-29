@@ -309,6 +309,71 @@ h2 {
   font-size: 10px;
   line-height: 1.8;
 }
+.get-plugins {
+  margin: 12px 0 0;
+  font-size: 11px;
+  background: #f3f8ef;
+}
+.modal.plugin-browser {
+  width: 800px;
+}
+.plugin-browser-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.plugin-browser-title > div {
+  flex: 1;
+}
+.plugin-browser-title h2 {
+  margin: 0;
+}
+.plugin-catalog {
+  max-height: 50vh;
+  overflow: auto;
+}
+.plugin-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 0;
+  border-top: 1px solid #edf0ee;
+}
+.plugin-row > div {
+  flex: 1;
+  min-width: 0;
+}
+.plugin-row strong {
+  font-size: 12px;
+}
+.plugin-row p {
+  margin: 4px 0;
+  font-size: 11px;
+}
+.plugin-row small {
+  font-size: 9px;
+}
+.plugin-row button {
+  font-size: 10px;
+  min-width: 90px;
+}
+.plugin-policy {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: #f1f6ec;
+  padding: 12px;
+  border-radius: 6px;
+}
+.plugin-policy svg {
+  flex-shrink: 0;
+}
+.plugin-message {
+  padding: 12px;
+  border: 1px solid #d9e8d8;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
 .library-footer small {
   font-size: 9px;
 }
@@ -570,7 +635,8 @@ main {
 .step-card.completed {
   border-color: #b4cfb0;
 }
-.step-card.running {
+.step-card.running,
+.trigger.running {
   border-color: #4d9968;
   background: #f4fbef;
   animation: active-flow-glow 1.6s ease-in-out infinite;

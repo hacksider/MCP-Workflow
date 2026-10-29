@@ -1,6 +1,6 @@
 # MCP Workflow
 
-Version **0.3.1**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.4.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
 
 MCP Workflow makes repeatable tasks easy to create using AI. Describe what you want in plain language, organize it into steps, and save an automation you can run again whenever needed. Start with a simple Text step, add skills or connected apps when useful, and describe API operations alongside their documentation. Codex chooses the underlying tools automatically. Every step finishes before the next one starts, carries its results forward, and shows progress and timing so you can see what the automation is doing.
 
@@ -71,6 +71,16 @@ The active step pulses with a green glow and shows its elapsed time. The canvas 
 
 The console also shows total workflow runs started, successful workflow runs, cumulative elapsed time across all runs, and a table of step attempts, completions, and average successful completion times. Each repetition counts as one step attempt. Failed/interrupted attempts count toward attempts but not successful averages. Aggregate statistics are saved locally per workflow ID and survive restarting the app. Exported definitions preserve workflow IDs, but statistics are stored separately and are not included in JSON exports. Old definitions receive an ID when loaded. Full output logs remain session-only.
 
+## Plugins and automatic skill downloads
+
+Use **Get plugins** in the sidebar to search your account's available ChatGPT/Codex marketplaces, inspect descriptions and versions, and install or update a plugin. The catalog is refreshed from Codex; installation uses the supported `codex plugin add` CLI rather than the experimental app-server installation endpoint. Required external-service authentication remains with ChatGPT/Codex. Restricted or disabled plugins are not silently enabled.
+
+Before an automation starts, the AI checks the current catalog and selects only the plugins needed for the task, alongside explicit plugin/skill references in the definition. Missing packages and available updates are downloaded automatically, including their bundled skills. Configured Git marketplace snapshots are refreshed before installing a needed package. Already-current packages are reused. Skill discovery is refreshed and skill paths resolved before a fresh execution thread starts. Plain text tasks can select no extra plugins. This dependency check uses the same signed-in Codex account and adds a planning turn to each run; its elapsed time is included in the run duration.
+
+Large catalogs are searchable in pages of up to 50 visible entries. The dependency planner receives a bounded shortlist of up to 60 relevant, installed, featured, or explicitly referenced candidates instead of sending the whole marketplace to the model.
+
+Latest means the version available to the account and configured marketplace/source, respecting pinned references and administrative policies. ChatGPT-only plugins not exposed through the Codex catalog cannot be installed by this app. Standalone locally authored skills are reloaded, not overwritten from unknown sources. Their owning plugin, when known, supplies package updates. Missing authentication, unavailable packages, and failed downloads stop the automation with an error rather than proceeding with a missing capability.
+
 ## Connection scope and API execution
 
 The integration uses [Codex app-server](https://learn.chatgpt.com/docs/app-server), not a connection back into this development chat. Discovery reflects the local Codex process, workspace, account, configuration, and enabled plugins. ChatGPT-only connectors and plugins are not automatically transferable. Configure the corresponding MCP server or Codex plugin separately when missing. Discovery reports partial errors rather than inventing capabilities.
@@ -95,6 +105,8 @@ Initial verification on Windows with Codex `0.165.0-alpha.1.2`: production front
 Repeat and timing coverage now includes 17 tests for immutable execution plans, ordered repetitions, delayed completions, cancellation, failed/blocked outcomes, unfinished agents/tools, import compatibility, and timing averages across reruns.
 
 Version 0.3.1 was also verified in the Windows desktop app with two real runs of the repeated Text-step example: three sequential repetitions completed per run, the previous results reached the summary step, total runs increased to two, and step averages accumulated across both runs. The running and completed automation screenshots show that verification.
+
+Plugin coverage adds catalog metadata/update checks, dependency validation, a large-marketplace shortlist test, and a Rust installer-policy test. The read-only live CLI catalog check is available with `cargo test --manifest-path src-tauri/Cargo.toml live_catalog_cli -- --ignored --nocapture`. The Windows plugin browser was checked against the live account catalog, and the supported CLI installer was verified by reinstalling the existing computer-use package at its current catalog version.
 
 ## Project maintenance
 
