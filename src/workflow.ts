@@ -1,3 +1,4 @@
+import { maxDelaySeconds, type DelayUnit } from "./timers";
 import {
   validateRetry,
   UnsafeStepError,
@@ -23,6 +24,7 @@ export type Step = {
     | "form"
     | "api"
     | "computer"
+    | "counter"
     | "condition"
     | "loop"
     | "values"
@@ -60,7 +62,8 @@ export type Step = {
     uniqueKey: string;
     liveCsvName?: string;
   };
-  wait?: { seconds: number };
+  wait?: { seconds: number; unit?: DelayUnit };
+  counter?: { limit: number; below: string; after: string };
   export?: { dataset: string; format: "csv" | "json"; name: string };
   condition?: {
     left: string;
@@ -138,7 +141,8 @@ export const newStep = (kind: Step["kind"], capability?: Capability): Step => ({
         fetch: "Fetch page",
         extract: "Extract data",
         collect: "Collect rows",
-        wait: "Wait",
+        wait: "Delay timer",
+        counter: "Counter",
         export: "Export file",
         condition: "Condition",
         loop: "Loop",
@@ -157,6 +161,8 @@ export const newStep = (kind: Step["kind"], capability?: Capability): Step => ({
   endpoint: "",
   documentation: "",
   repeat: 1,
+  counter:
+    kind === "counter" ? { limit: 3, below: "", after: "$end" } : undefined,
   values: kind === "values" ? '{"url":"https://example.com"}' : undefined,
   fetch: kind === "fetch" ? { url: "{{vars.url}}", maxPages: 10 } : undefined,
   extract:
@@ -213,6 +219,7 @@ export function parseWorkflow(text: string, draft = false): Workflow {
     "collect",
     "wait",
     "export",
+    "counter",
     "condition",
     "loop",
     "instruction",
@@ -334,9 +341,25 @@ export function parseWorkflow(text: string, draft = false): Workflow {
       s.kind === "wait" &&
       (!s.wait ||
         !Number.isFinite(s.wait.seconds) ||
-        (!draft && (s.wait.seconds < 0 || s.wait.seconds > 60)))
+        (!draft && (s.wait.seconds < 0 || s.wait.seconds > maxDelaySeconds)))
     )
-      throw Error("Invalid wait duration");
+      throw Error("Delay must be from 0 seconds to 365 days");
+    if (
+      s.wait?.unit !== undefined &&
+      !["seconds", "minutes", "hours", "days"].includes(s.wait.unit)
+    )
+      throw Error("Invalid delay unit");
+    if (
+      s.kind === "counter" &&
+      (!s.counter ||
+        !Number.isInteger(s.counter.limit) ||
+        (!draft && (s.counter.limit < 1 || s.counter.limit > 1000000)) ||
+        typeof s.counter.below !== "string" ||
+        typeof s.counter.after !== "string")
+    )
+      throw Error(
+        "Counter needs a limit from 1 to 1000000 and two destinations",
+      );
     if (
       s.kind === "export" &&
       (!s.export ||
@@ -423,6 +446,7 @@ export function stepPrompt(
     ![
       "upload",
       "form",
+      "counter",
       "condition",
       "loop",
       "values",

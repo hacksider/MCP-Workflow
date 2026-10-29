@@ -109,7 +109,36 @@ export function RoutingEditor({
           </p>
         </>
       )}
-      {!["condition", "loop"].includes(step.kind) &&
+      {step.kind === "counter" && step.counter && (
+        <>
+          <label>
+            Repetition limit
+            <input
+              type="number"
+              min={1}
+              max={1000000}
+              value={step.counter.limit}
+              onChange={(e) =>
+                onChange({
+                  counter: { ...step.counter!, limit: Number(e.target.value) },
+                })
+              }
+            />
+          </label>
+          {destination("Below limit", step.counter.below, (v) =>
+            onChange({ counter: { ...step.counter!, below: v } }),
+          )}
+          {destination("Limit reached", step.counter.after, (v) =>
+            onChange({ counter: { ...step.counter!, after: v } }),
+          )}
+          <p className="muted">
+            Counts one completed visit at a time, starting at 1. Put this after
+            the action you want to count; connect Below limit back to that
+            action. Counts reset for each run.
+          </p>
+        </>
+      )}
+      {!["condition", "loop", "counter"].includes(step.kind) &&
         destination("Next step", step.next ?? "", (v) => onChange({ next: v }))}
       <small>
         References use step IDs: {"{{steps.STEP_ID.outputs.field}}"}. This

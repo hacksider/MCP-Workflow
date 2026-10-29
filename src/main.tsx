@@ -1,3 +1,4 @@
+import { formatCountdown } from "./timers";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -125,6 +126,7 @@ const icons = {
   extract: Search,
   collect: Layers,
   wait: Circle,
+  counter: RefreshCw,
   export: ArrowDownToLine,
   condition: GitBranch,
   loop: RefreshCw,
@@ -137,6 +139,8 @@ type Run = {
   output: string;
   status: StepState;
   startedAt: number;
+  endsAt?: number;
+  counter?: { count: number; limit: number };
   durationMs?: number;
   formFields?: FormField[];
   formValues?: Record<string, unknown>;
@@ -822,6 +826,10 @@ function App() {
               output: "",
               status: "running",
               startedAt: attemptStarted,
+              endsAt:
+                step.kind === "wait"
+                  ? attemptStarted + (step.wait?.seconds ?? 0) * 1000
+                  : undefined,
             },
           ]);
           try {
@@ -832,6 +840,7 @@ function App() {
                 context,
                 workflow.cwd,
                 () => cancelled.current || control.signal.aborted,
+                control.heartbeat,
               );
               if (cancelled.current)
                 throw new Error(
@@ -970,6 +979,13 @@ function App() {
                   ? {
                       ...s,
                       formValues,
+                      counter:
+                        step.kind === "counter"
+                          ? {
+                              count: (data as any).count,
+                              limit: (data as any).limit,
+                            }
+                          : undefined,
                       formFields: step.formFields,
                       summary: report.summary,
                       status:
@@ -1142,7 +1158,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.14.0</span>
+          <span className="version">0.15.0</span>
         </div>
         <div className="workflow-library-actions">
           <button
@@ -1218,7 +1234,16 @@ function App() {
                 ["collect", "Collect rows", "Keep unique results"],
                 ["condition", "Condition", "Choose a true or false path"],
                 ["loop", "Loop", "Repeat a group of steps"],
-                ["wait", "Wait", "Pace requests"],
+                [
+                  "wait",
+                  "Delay timer",
+                  "Delay the next step in seconds, minutes, hours or days",
+                ],
+                [
+                  "counter",
+                  "Counter",
+                  "Count completed visits and branch at a limit",
+                ],
                 ["export", "Export file", "Save CSV or JSON"],
                 [
                   "computer",
@@ -1549,6 +1574,15 @@ function App() {
                         )}
                       </span>
                       {r.name}
+                      {r.endsAt && r.status === "running" ? (
+                        <b className="countdown-inline">
+                          {formatCountdown(r.endsAt - now)} remaining
+                        </b>
+                      ) : r.counter ? (
+                        <b className="countdown-inline">
+                          {r.counter.count} / {r.counter.limit}
+                        </b>
+                      ) : null}
                       <small>
                         {r.status} ·{" "}
                         {formatDuration(r.durationMs ?? now - r.startedAt)}

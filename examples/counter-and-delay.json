@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "counter-delay-demo",
+  "name": "Delay and count three repetitions",
+  "description": "A live one-second countdown repeats three times. The counter counts 1, 2, 3 and then routes to End.",
+  "cwd": "",
+  "instructions": "Demonstrate real countdown progress and counter branching. Each timer must finish before the counter increments.",
+  "maxExecutions": 20,
+  "startStepId": "delay",
+  "steps": [
+    {
+      "id": "delay",
+      "kind": "wait",
+      "name": "Delay before counting",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "wait": {
+        "seconds": 1,
+        "unit": "seconds"
+      },
+      "next": "count",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "count",
+      "kind": "counter",
+      "name": "Count completed delays",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "counter": {
+        "limit": 3,
+        "below": "delay",
+        "after": "$end"
+      },
+      "position": {
+        "x": 350,
+        "y": 0
+      }
+    }
+  ]
+}

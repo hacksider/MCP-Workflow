@@ -88,6 +88,8 @@ export function validateRoutes(workflow: Workflow) {
     const targets = [
       s.next,
       s.onError,
+      s.counter?.below,
+      s.counter?.after,
       s.condition?.yes,
       s.condition?.no,
       s.loop?.body,
@@ -210,6 +212,12 @@ export async function runGraph(
         loops.delete(step.id);
         target = step.loop!.after;
       }
+    }
+    if (!errorTarget && step.kind === "counter") {
+      const result = context.steps[step.id]?.outputs;
+      if (typeof result?.reached !== "boolean")
+        throw Error("Counter did not return its completed count");
+      target = result.reached ? step.counter!.after : step.counter!.below;
     }
     if (errorTarget) target = errorTarget;
     if (target === "$end") return;

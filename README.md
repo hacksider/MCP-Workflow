@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.14.0** · Tauri + React + Rust · Windows installer
+Current version: **0.15.0** · Tauri + React + Rust · Windows installer
 
 ![Visual graph with Beginning, End, conditions, loops and recovery](docs/screenshots/graph-editor.png)
 
@@ -36,6 +36,12 @@ Open a step’s **Retries & recovery** to choose retries, retry delay, inactivit
 
 Click **Loops demo** for a working [conditions, loops and recovery example](examples/conditions-and-loops.json). It intentionally fails a missing optional input, retries once, recovers to a default, branches on a condition, completes three loop iterations and reaches End. It needs no AI account.
 
+## Delay and count repetitions
+
+**Delay timer** waits before the next step and shows its remaining time in the graph and console. Choose seconds, minutes, hours or days. **Counter** increments on each completed visit and takes either its Below limit or Limit reached path. Counts reset for every run.
+
+Try [Delay and count three repetitions](examples/counter-and-delay.json): Beginning → Delay → Counter → back to Delay until count 3 → End. The scraper demo also counts fetched pages.
+
 ## Build your own flow
 
 Click an element in the left sidebar, configure it, then choose its next step.
@@ -48,7 +54,8 @@ Click an element in the left sidebar, configure it, then choose its next step.
 | Set values | Define inputs and update variables |
 | Fetch page / Extract data | Read HTML and select rows, text and attributes |
 | Collect rows / Export file | Remove duplicates and save CSV or JSON |
-| Condition / Loop / Wait | Branch, repeat steps and pace requests |
+| Condition / Loop / Counter | Branch, repeat groups, and count completed repetitions |
+| Delay timer | Wait in seconds, minutes, hours or days, with a live countdown |
 | Computer task | Interact with a browser or app when a compatible runtime is available |
 
 **Great first flows:**

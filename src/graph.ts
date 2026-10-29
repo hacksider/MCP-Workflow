@@ -1,5 +1,6 @@
 import type { Workflow } from "./workflow";
-export type Port = "next" | "yes" | "no" | "body" | "after" | "error" | "start";
+export type Port =
+  "next" | "yes" | "no" | "body" | "after" | "error" | "start" | "below";
 export type Route = {
   source: string;
   port: Port;
@@ -47,6 +48,21 @@ export function routes(workflow: Workflow): Route[] {
           label: "Done",
         },
       );
+    else if (s.kind === "counter")
+      result.push(
+        {
+          source: s.id,
+          port: "below",
+          target: s.counter?.below || next,
+          label: "Below limit",
+        },
+        {
+          source: s.id,
+          port: "after",
+          target: s.counter?.after || next,
+          label: "Limit reached",
+        },
+      );
     else
       result.push({
         source: s.id,
@@ -81,6 +97,12 @@ export function connectRoute(
       if (s.id !== source) return s;
       if (port === "error") return { ...s, onError: target };
       if (
+        s.kind === "counter" &&
+        s.counter &&
+        (port === "below" || port === "after")
+      )
+        return { ...s, counter: { ...s.counter, [port]: target } };
+      if (
         s.kind === "condition" &&
         s.condition &&
         (port === "yes" || port === "no")
@@ -88,7 +110,7 @@ export function connectRoute(
         return { ...s, condition: { ...s.condition, [port]: target } };
       if (s.kind === "loop" && s.loop && (port === "body" || port === "after"))
         return { ...s, loop: { ...s.loop, [port]: target } };
-      if (port === "next" && !["loop", "condition"].includes(s.kind))
+      if (port === "next" && !["loop", "condition", "counter"].includes(s.kind))
         return { ...s, next: target };
       throw Error("This connector does not belong to the source step");
     }),

@@ -1,9 +1,11 @@
+import { maxDelaySeconds } from "./timers";
 import { invoke } from "@tauri-apps/api/core";
 import { conditionResult, resolve, type Context } from "./routing";
 import type { Step, Workflow } from "./workflow";
 export const isNativeStep = (step: Step) =>
   (step.kind === "api" && !!step.api) ||
   [
+    "counter",
     "condition",
     "loop",
     "values",
@@ -20,6 +22,7 @@ export async function executeNativeStep(
   context: Context,
   cwd = "",
   cancelled: () => boolean = () => false,
+  heartbeat: () => void = () => {},
 ): Promise<{ status: "completed"; summary: string; outputs: string }> {
   const done = (summary: string, outputs: unknown) => ({
     status: "completed" as const,
@@ -126,17 +129,28 @@ export async function executeNativeStep(
       { added: combined.length - prior.length, total: combined.length },
     );
   }
+  if (step.kind === "counter") {
+    const c = step.counter;
+    if (!c || !Number.isInteger(c.limit) || c.limit < 1 || c.limit > 1000000)
+      throw Error("Counter needs a valid limit");
+    const count = (context.steps[step.id]?.outputs.count ?? 0) + 1;
+    return done(
+      `Counter ${count} / ${c.limit} · ${count >= c.limit ? "limit reached" : "below limit"}`,
+      { count, limit: c.limit, reached: count >= c.limit },
+    );
+  }
   if (step.kind === "wait") {
     const seconds = step.wait?.seconds;
     if (
       seconds === undefined ||
       !Number.isFinite(seconds) ||
       seconds < 0 ||
-      seconds > 60
+      seconds > maxDelaySeconds
     )
-      throw Error("Wait must be 0–60 seconds");
+      throw Error("Delay must be from 0 seconds to 365 days");
     const until = Date.now() + seconds * 1000;
     while (Date.now() < until) {
+      heartbeat();
       if (cancelled()) throw Error("Stopped");
       await new Promise((r) =>
         setTimeout(r, Math.min(100, until - Date.now())),

@@ -1181,3 +1181,7 @@ label small {
 .live-csv pre {overflow:auto;font-size:12px;line-height:1.9;flex:1;}
 .live-csv.focused td,.live-csv.focused th {padding:14px 18px;font-size:15px;}
 @keyframes csv-row-arrive {from{background:#e0f2cf;}to{background:white;}}
+
+.graph-node .graph-countdown,.graph-node .graph-counter {display:block;font-size:23px;color:#337344;margin:6px 0 10px;font-variant-numeric:tabular-nums;}
+.countdown-inline {margin-left:auto;color:#4b7f51;font-size:11px;font-variant-numeric:tabular-nums;}
+.monitor-counter {display:inline-block;margin-left:14px;font-size:12px;color:#477844;font-weight:600;}

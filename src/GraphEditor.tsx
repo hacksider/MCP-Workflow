@@ -1,3 +1,4 @@
+import { formatCountdown } from "./timers";
 import { useEffect, useMemo, useState } from "react";
 import {
   applyNodeChanges,
@@ -26,6 +27,8 @@ type FlowNode = Node<{
   duration?: number;
   terminal?: string;
   selected: boolean;
+  countdown?: string;
+  counter?: { count: number; limit: number };
 }>;
 function WorkflowNode({ data }: NodeProps<FlowNode>) {
   const ports =
@@ -39,7 +42,12 @@ function WorkflowNode({ data }: NodeProps<FlowNode>) {
             ["body", "Repeat"],
             ["after", "Done"],
           ]
-        : [[data.terminal === "start" ? "start" : "next", "Next"]];
+        : data.step?.kind === "counter"
+          ? [
+              ["below", "Below limit"],
+              ["after", "Limit reached"],
+            ]
+          : [[data.terminal === "start" ? "start" : "next", "Next"]];
   return (
     <div
       className={`graph-node ${data.status ?? ""} ${data.selected ? "selected" : ""} ${data.terminal ? "terminal" : ""}`}
@@ -55,6 +63,12 @@ function WorkflowNode({ data }: NodeProps<FlowNode>) {
           : data.step?.kind.toUpperCase()}
       </small>
       <strong>{data.label}</strong>
+      {data.countdown && <b className="graph-countdown">{data.countdown}</b>}
+      {data.counter && (
+        <b className="graph-counter">
+          {data.counter.count} / {data.counter.limit}
+        </b>
+      )}
       {data.status && (
         <span>
           {data.status}
@@ -118,6 +132,8 @@ function Canvas({
     status: string;
     durationMs?: number;
     startedAt: number;
+    endsAt?: number;
+    counter?: { count: number; limit: number };
   }[];
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -153,6 +169,15 @@ function Canvas({
             step,
             selected: step.id === selected,
             status: run?.status,
+            countdown:
+              run?.status === "running" && run.endsAt !== undefined
+                ? formatCountdown(run.endsAt - now)
+                : undefined,
+            counter:
+              run?.counter ??
+              (step.counter
+                ? { count: 0, limit: step.counter.limit }
+                : undefined),
             duration:
               run?.durationMs ?? (run ? now - run.startedAt : undefined),
           },

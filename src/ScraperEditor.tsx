@@ -1,3 +1,4 @@
+import { delayUnits, maxDelaySeconds, type DelayUnit } from "./timers";
 import type { Step } from "./workflow";
 export function ScraperEditor({
   step,
@@ -210,20 +211,55 @@ export function ScraperEditor({
         </>
       )}
       {step.wait && (
-        <label>
-          Seconds
-          <input
-            type="number"
-            min={0}
-            max={60}
-            step={0.1}
-            value={step.wait.seconds}
-            onChange={(e) =>
-              onChange({ wait: { seconds: Number(e.target.value) } })
-            }
-          />
-          <small>Add between fetches to control request pace.</small>
-        </label>
+        <>
+          <label>
+            Delay amount
+            <input
+              type="number"
+              min={0}
+              max={maxDelaySeconds / delayUnits[step.wait.unit ?? "seconds"]}
+              step="any"
+              value={
+                step.wait.seconds / delayUnits[step.wait.unit ?? "seconds"]
+              }
+              onChange={(e) =>
+                onChange({
+                  wait: {
+                    ...step.wait!,
+                    seconds:
+                      Number(e.target.value) *
+                      delayUnits[step.wait!.unit ?? "seconds"],
+                  },
+                })
+              }
+            />
+          </label>
+          <label>
+            Time unit
+            <select
+              value={step.wait.unit ?? "seconds"}
+              onChange={(e) => {
+                const unit = e.target.value as DelayUnit;
+                const amount =
+                  step.wait!.seconds / delayUnits[step.wait!.unit ?? "seconds"];
+                onChange({
+                  wait: { seconds: amount * delayUnits[unit], unit },
+                });
+              }}
+            >
+              {Object.keys(delayUnits).map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </select>
+          </label>
+          <small>
+            The next step waits for this countdown to reach zero. Delays can
+            last up to 365 days while this app remains running. Stop interrupts
+            the delay; it does not survive an app restart.
+          </small>
+        </>
       )}
       {step.export && (
         <>

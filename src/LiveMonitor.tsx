@@ -1,3 +1,4 @@
+import { formatCountdown } from "./timers";
 import { useMemo, useState } from "react";
 import { GraphEditor } from "./GraphEditor";
 import type { Workflow } from "./workflow";
@@ -60,6 +61,8 @@ export function LiveMonitor({
     status: string;
     durationMs?: number;
     startedAt: number;
+    endsAt?: number;
+    counter?: { count: number; limit: number };
   }[];
   now: number;
   onRun: () => void;
@@ -81,6 +84,8 @@ export function LiveMonitor({
     [data.page?.html],
   );
   const activeName = workflow.steps.find((s) => s.id === active)?.name;
+  const activeRun = runs.filter((r) => r.stepId === active).at(-1);
+  const lastCounter = runs.filter((r) => r.counter).at(-1)?.counter;
   return (
     <div
       className="live-monitor"
@@ -93,11 +98,16 @@ export function LiveMonitor({
           <h2>{workflow.name}</h2>
           <small>
             {running
-              ? `Running: ${activeName ?? "Preparing"}`
+              ? `Running: ${activeName ?? "Preparing"}${activeRun?.endsAt ? ` · ${formatCountdown(activeRun.endsAt - now)} remaining` : ""}`
               : reachedEnd
                 ? "Reached End · run completed"
                 : "Page preview · ready to run"}
           </small>
+          {lastCounter && (
+            <span className="monitor-counter">
+              Counter: {lastCounter.count} / {lastCounter.limit}
+            </span>
+          )}
         </div>
         <div className="monitor-actions">
           <button

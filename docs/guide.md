@@ -37,11 +37,12 @@ The [Amazon-style template](../examples/amazon-scraper-demo.json) uses two bundl
 | Fetch page | Reads the page, with a three-page cap |
 | Extract data | Selects product rows and extracts ASIN, title, price and link |
 | Collect rows | Keeps one product per ASIN |
+| Counter | Counts fetched pages and caps the workflow at three pages |
 | Condition | Checks whether extraction found a next-page link |
 | Set values | Updates `url` and routes back to Wait |
 | Export file × 2 | Writes CSV and JSON with unique filenames |
 
-Two pages contain six rows, including one duplicate. A successful run exports five products and executes 14 step visits. A second run starts fresh and creates new files. [Example CSV](demo/products.csv) · [Example JSON](demo/products.json).
+Two pages contain six rows, including one duplicate. A successful run exports five products and executes 16 step visits. A second run starts fresh and creates new files. [Example CSV](demo/products.csv) · [Example JSON](demo/products.json).
 
 [![Watch the actual desktop demonstration](screenshots/scraper-completed.png)](demo/amazon-scraper-demo.mp4)
 
@@ -61,9 +62,17 @@ In **Retries & recovery**, set 0–10 retries, a delay of 0–60 seconds, and an
 
 Retries restore variables, datasets and step outputs to their state before the failed attempt; they do not undo external API writes, file exports or computer actions. Use idempotent operations or service idempotency keys when needed. Every attempt counts toward the global execution limit and appears separately in the console and timing totals.
 
-Click **Loops demo** to add the [conditions, loops and recovery template](../examples/conditions-and-loops.json). Beginning enters a deliberately missing optional input, which fails twice (initial attempt plus one retry), then follows Error to a default value. The condition chooses the enabled path, a counted loop completes its Wait body three times, and the final step reaches End. Setting the default `enabled` value to false demonstrates the alternate exit. To try inactivity recovery, set the body’s Wait to five seconds and its inactivity timeout to one second; it will stop, retry once and follow its Error path to the final step. These native steps need no AI account.
+Click **Loops demo** to add the [conditions, loops and recovery template](../examples/conditions-and-loops.json). Beginning enters a deliberately missing optional input, which fails twice (initial attempt plus one retry), then follows Error to a default value. The condition chooses the enabled path, a counted loop completes its Wait body three times, and the final step reaches End. Setting the default `enabled` value to false demonstrates the alternate exit. Intentional Delay timers report activity during their countdown, so an ordinary delay is not mistaken for an unresponsive action. These native steps need no AI account.
 
 ![Completed recovery and loop execution](screenshots/graph-completed.png)
+
+## Delay timers and counters
+
+A **Delay timer** pauses execution until its countdown reaches zero. Select seconds, minutes, hours or days in the inspector; the graph, console and live monitor show its remaining time. The maximum delay is 365 days while this app remains running. Stop interrupts a delay. Timers do not resume after closing the app. Exported JSON stores the canonical duration as `wait.seconds` and the selected display unit as `wait.unit`; older Wait steps still load as seconds.
+
+A **Counter** counts each completed visit, beginning at one, and publishes `count`, `limit` and `reached` in its outputs. For example, `{{steps.count.outputs.count}}` reads the current count. Choose separate **Below limit** and **Limit reached** destinations, or reconnect their graph handles. Place the Counter after the action you want to count, then route Below limit back to that action. The count remains at/above its limit if revisited later in the same run, and starts fresh on the next run.
+
+Import [counter-and-delay.json](../examples/counter-and-delay.json) to see three real one-second countdowns and counts 1 → 2 → 3 before End. The scraper template counts fetched pages too: its three-page cap is an alternate exit, while the next-page condition normally ends the two-page sample.
 
 ## Data references and loops
 

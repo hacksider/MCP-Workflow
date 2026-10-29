@@ -96,6 +96,20 @@
       }
     },
     {
+      "id": "pages",
+      "kind": "counter",
+      "name": "Count fetched pages",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "counter": {
+        "limit": 3,
+        "below": "pagination",
+        "after": "csv"
+      }
+    },
+    {
       "id": "pagination",
       "kind": "condition",
       "name": "Is there another page?",
