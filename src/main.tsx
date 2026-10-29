@@ -51,7 +51,6 @@ import {
   parseOutcome,
   parseWorkflow,
   buildRunPlan,
-  runSequential,
   CompletionGuard,
   type Capability,
   type Step,
@@ -74,6 +73,8 @@ import {
   validatePluginSelection,
   type Plugin,
 } from "./plugins";
+import { runGraph, newContext, validateRoutes } from "./routing";
+import { RoutingEditor } from "./RoutingEditor";
 import { FormEditor, FormResult } from "./FormFlow";
 import { executeNativeStep, isNativeStep, needsAgent } from "./native";
 import { validateFormValues, type FormField } from "./workflow";
@@ -89,6 +90,8 @@ const icons = {
   computer: Monitor,
   upload: Upload,
   form: FileText,
+  condition: GitBranch,
+  loop: RefreshCw,
 };
 type StepState = "running" | "completed" | "failed" | "interrupted";
 type Run = {
@@ -529,6 +532,7 @@ function App() {
     let plan: ReturnType<typeof buildRunPlan>;
     try {
       plan = buildRunPlan(workflow);
+      validateRoutes(workflow);
     } catch (e) {
       setError(String(e));
       return;
@@ -540,7 +544,8 @@ function App() {
     const workflowId = workflow.id!;
     const timings: { stepId: string; status: string; durationMs?: number }[] =
       [];
-    const priorResults: Record<string, unknown> = {};
+    const context = newContext();
+    const priorResults = context.steps;
     let success = false;
     runStarted.current = performance.now();
     setNow(runStarted.current);
@@ -570,8 +575,9 @@ function App() {
         });
         thread.current = started.thread.id;
       }
-      await runSequential(
-        plan,
+      await runGraph(
+        workflow,
+        context,
         async ({ id: runId, step, iteration, total, prompt }) => {
           const attemptStarted = performance.now();
           const timing = { stepId: step.id, status: "running", durationMs: 0 };
@@ -596,7 +602,7 @@ function App() {
           try {
             let report: ReturnType<typeof parseOutcome>;
             if (isNativeStep(step)) {
-              report = await executeNativeStep(step);
+              report = await executeNativeStep(step, context);
               if (cancelled.current)
                 throw new Error(
                   "Run stopped after the in-flight request finished.",
@@ -826,7 +832,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.8.0</span>
+          <span className="version">0.9.0</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -1031,7 +1037,7 @@ function App() {
             <div>
               <span className="status-dot" />
               {workflow.steps.length} steps <span className="separator">/</span>{" "}
-              Sequential flow · waits for completion
+              Connected flow · waits for completion
             </div>
             <button
               onClick={() => {
@@ -1097,7 +1103,8 @@ function App() {
                         </small>
                         <strong>{s.name}</strong>
                         <span>
-                          {s.instructions || "Add instructions for this step"}
+                          {s.instructions || (s.kind === "condition" ? `True: ${workflow.steps.find(x=>x.id===s.condition?.yes)?.name ?? s.condition?.yes ?? "next"}; false: ${workflow.steps.find(x=>x.id===s.condition?.no)?.name ?? s.condition?.no ?? "next"}` : s.kind === "loop" ? `Loop ${s.loop?.times ?? 1} times; body must return here` : "Configure this step")}
+                          {s.next && ` | Next: ${workflow.steps.find(x=>x.id===s.next)?.name ?? s.next}`}
                         </span>
                       </span>
                       {run && (
@@ -1151,6 +1158,8 @@ function App() {
                 <button disabled={running} onClick={() => add("form")}>
                   <FileText size={16} /> Form
                 </button>
+                <button disabled={running} onClick={() => add("condition")}><GitBranch size={16} /> Condition</button>
+                <button disabled={running} onClick={() => add("loop")}><RefreshCw size={16} /> Loop</button>
                 <button disabled={running} onClick={() => add("computer")}>
                   <Monitor size={16} /> Computer task
                 </button>
@@ -1172,7 +1181,7 @@ function App() {
               </span>
               <small>
                 {runs.length
-                  ? `${runs.filter((r) => r.status === "completed").length} of ${runTotal} completed`
+                  ? `${runs.filter((r) => r.status === "completed").length} completed · ${runTotal} planned before branches`
                   : "Ready when you are"}
               </small>
             </div>
@@ -1475,6 +1484,7 @@ function App() {
                     </label>
                   </>
                 )}
+                <RoutingEditor step={current} steps={workflow.steps} onChange={editStep} />
                 {current.kind === "form" && (
                   <FormEditor
                     fields={current.formFields ?? []}
@@ -1588,6 +1598,7 @@ function App() {
                     Absolute path. Used to discover skills and run workflows.
                   </small>
                 </label>
+                <label>Maximum step executions<input type="number" min={1} max={10000} value={workflow.maxExecutions ?? 100} onChange={e=>update({maxExecutions:Number(e.target.value)})}/><small>Stops accidental infinite loops.</small></label>
                 <label>
                   Workflow instructions
                   <textarea

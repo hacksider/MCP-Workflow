@@ -11,12 +11,15 @@ export type Capability = {
 export type Step = {
   id: string;
   kind:
-    "instruction" | "upload" | "form" | "api" | "computer" | Capability["kind"];
+    "instruction" | "upload" | "form" | "api" | "computer" | "condition" | "loop" | Capability["kind"];
   name: string;
   instructions: string;
   endpoint: string;
   documentation: string;
   repeat?: number;
+  next?: string;
+  condition?: {left: string; operator: "equals" | "contains" | "truthy" | "greater"; right: string; yes: string; no: string};
+  loop?: {times: number; body: string; after: string};
   capability?: Capability;
   files?: { name: string; path: string; size: number }[];
   formFields?: FormField[];
@@ -44,6 +47,7 @@ export type Workflow = {
   cwd: string;
   instructions: string;
   steps: Step[];
+  maxExecutions?: number;
 };
 export const outcomeSchema = {
   type: "object",
@@ -89,6 +93,8 @@ export const newStep = (kind: Step["kind"], capability?: Capability): Step => ({
   endpoint: "",
   documentation: "",
   repeat: 1,
+  condition: kind === "condition" ? {left:"",operator:"truthy",right:"",yes:"",no:"$end"} : undefined,
+  loop: kind === "loop" ? {times:3,body:"",after:"$end"} : undefined,
   api:
     kind === "api"
       ? { method: "GET", headers: "{}", body: "", authEnv: "" }
@@ -112,6 +118,7 @@ export const newWorkflow = (): Workflow => ({
 export function parseWorkflow(text: string): Workflow {
   const w = JSON.parse(text);
   const kinds = [
+    "condition", "loop",
     "instruction",
     "upload",
     "form",
@@ -217,7 +224,7 @@ export function stepPrompt(
 ): string {
   if (
     !step.instructions.trim() &&
-    !["upload", "form"].includes(step.kind) &&
+    !["upload", "form", "condition", "loop"].includes(step.kind) &&
     !step.api
   )
     throw new Error(`Add instructions to step ${index + 1}.`);

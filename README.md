@@ -1,6 +1,6 @@
 # MCP Workflow
 
-Version **0.8.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.9.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
 
 MCP Workflow makes repeatable tasks easy to create using AI. Describe what you want in plain language, organize it into steps, and save an automation you can run again whenever needed. Start with a simple Text step, add skills or connected apps when useful, and describe API operations alongside their documentation. Codex chooses the underlying tools automatically. Every step finishes before the next one starts, carries its results forward, and shows progress and timing so you can see what the automation is doing.
 
@@ -133,3 +133,6 @@ Plugin coverage adds catalog metadata/update checks, dependency validation, a la
 ## Project maintenance
 
 Every completed change should update this README when the application's purpose, features, setup instructions, behavior, or limitations change. Refresh real application screenshots when the UI changes and capture them when practical. Keep the documented version, application manifests, and lockfiles synchronized; see [AGENTS.md](AGENTS.md).
+
+### Conditions and loops
+Choose a true/false destination on a Condition. A Loop repeats its body a fixed number of times; set the last body step’s Next step back to that Loop, then choose its exit. Any step can route to an earlier step. References such as `{{steps.extract.outputs.nextUrl}}` read completed results. The workflow execution limit stops accidental infinite cycles. Each action finishes before routing.

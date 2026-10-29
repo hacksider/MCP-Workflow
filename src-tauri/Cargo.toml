@@ -1,6 +1,6 @@
 [package]
 name = "mcp-workflow"
-version = "0.8.0"
+version = "0.9.0"
 description = "A local Codex workflow studio"
 authors = ["MCP Workflow"]
 edition = "2021"

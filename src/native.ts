@@ -1,11 +1,14 @@
 import { invoke } from "@tauri-apps/api/core";
+import { conditionResult, type Context } from "./routing";
 import type { Step, Workflow } from "./workflow";
-export const isNativeStep = (step: Step) => step.kind === "api" && !!step.api;
+export const isNativeStep = (step: Step) => (step.kind === "api" && !!step.api) || ["condition", "loop"].includes(step.kind);
 export const needsAgent = (workflow: Workflow) =>
   workflow.steps.some((s) => !isNativeStep(s));
 export async function executeNativeStep(
   step: Step,
+  context: Context,
 ): Promise<{ status: "completed"; summary: string; outputs: string }> {
+  if (step.kind === "condition" || step.kind === "loop") return {status:"completed",summary:step.kind === "condition" ? `Condition: ${conditionResult(step.condition!,context)}` : `Loop gate (${step.loop!.times} iterations)`,outputs:JSON.stringify(step.kind === "condition" ? {matched:conditionResult(step.condition!,context)} : {times:step.loop!.times})};
   if (step.kind === "api" && step.api) {
     const data = await invoke<any>("http_request", {
       url: step.endpoint,
