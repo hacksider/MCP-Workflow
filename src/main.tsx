@@ -217,9 +217,8 @@ function App() {
       } while (cursor);
       return data;
     }
-    const [skills, servers, plugins, apps, catalog] = await Promise.all([
+    const [skills, plugins, apps, catalog] = await Promise.all([
       optional("skills/list", { cwds: [workflow.cwd], forceReload: true }),
-      paged("mcpServerStatus/list"),
       optional("plugin/list", { cwds: [workflow.cwd] }),
       paged("app/list"),
       optional("model/list", {}),
@@ -229,10 +228,7 @@ function App() {
         notices.push(`Skill discovery: ${issue.message}`);
     for (const issue of plugins?.marketplaceLoadErrors ?? [])
       notices.push(`Plugin discovery: ${issue.message}`);
-    for (const server of servers)
-      if (server.toolsError)
-        notices.push(`${server.name}: ${server.toolsError}`);
-    setCapabilities(normalizeCapabilities(skills, servers, plugins, apps));
+    setCapabilities(normalizeCapabilities(skills, plugins, apps));
     setModels(catalog?.data ?? []);
     setWarnings(notices);
   }
@@ -482,7 +478,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.1.1</span>
+          <span className="version">0.1.2</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -527,14 +523,14 @@ function App() {
             <Search size={15} />
             <input
               aria-label="Search capabilities"
-              placeholder="Find a skill or tool…"
+              placeholder="Search capabilities…"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
             <span>⌕</span>
           </div>
           <div className="filters">
-            {["All", "Skill", "Plugin", "Tool", "App"].map((c) => (
+            {["All", "Skill", "Plugin", "App"].map((c) => (
               <button
                 key={c}
                 className={category === c ? "active" : ""}
@@ -550,10 +546,10 @@ function App() {
                 <span className="empty-icon">
                   <Plug size={24} />
                 </span>
-                <h3>Your tools, together.</h3>
+                <h3>Your capabilities, together.</h3>
                 <p>
                   Connect Codex and choose a workspace to discover skills,
-                  plugins, apps, and MCP tools.
+                  plugins, and apps.
                 </p>
                 <small>
                   Only capabilities available to the local session appear here.
@@ -597,7 +593,7 @@ function App() {
             <span>
               Runs locally with your session.
               <br />
-              <small>Tool access follows Codex permissions.</small>
+              <small>Permissions follow your Codex settings.</small>
             </span>
           </div>
         </aside>
@@ -784,7 +780,7 @@ function App() {
             </div>
             {!runs.length ? (
               <p className="run-placeholder">
-                Results, tool activity, and approval requests will appear here.
+                Results, progress, and approval requests will appear here.
               </p>
             ) : (
               <div className="run-results">
@@ -809,7 +805,7 @@ function App() {
                 {events.length > 0 && (
                   <details>
                     <summary>
-                      Tool activity <small>{events.length} events</small>
+                      Execution details <small>{events.length} events</small>
                     </summary>
                     <pre>{events.join("\n")}</pre>
                   </details>
@@ -947,7 +943,7 @@ function App() {
                     onChange={(e) => update({ cwd: e.target.value })}
                   />
                   <small>
-                    Absolute path. Used to discover skills and run tools.
+                    Absolute path. Used to discover skills and run workflows.
                   </small>
                 </label>
                 <label>

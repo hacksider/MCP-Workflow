@@ -67,12 +67,6 @@ describe("workflow persistence and execution boundaries", () => {
     };
     const result = normalizeCapabilities(
       { data: [{ skills: [skill, skill] }] },
-      [
-        {
-          name: "github",
-          tools: { search: { name: "search", description: "Search issues" } },
-        },
-      ],
       {
         marketplaces: [
           {
@@ -83,9 +77,18 @@ describe("workflow persistence and execution boundaries", () => {
           },
         ],
       },
-      [{ id: "x", isAccessible: false }],
+      [
+        { id: "x", isAccessible: false },
+        {
+          id: "y",
+          name: "Calendar",
+          description: "Read events",
+          isAccessible: true,
+          isEnabled: true,
+        },
+      ],
     );
-    expect(result.map((c) => c.kind)).toEqual(["skill", "tool", "plugin"]);
-    expect(result[1].server).toBe("github");
+    expect(result.map((c) => c.kind)).toEqual(["skill", "plugin", "app"]);
+    expect(result[2].name).toBe("Calendar");
   });
 });

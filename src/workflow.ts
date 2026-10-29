@@ -150,7 +150,6 @@ export function stepPrompt(
 
 export function normalizeCapabilities(
   skills: any,
-  servers: any[],
   plugins: any,
   apps: any[],
 ): Capability[] {
@@ -164,16 +163,6 @@ export function normalizeCapabilities(
         kind: "skill",
         path: s.path,
         enabled: s.enabled !== false,
-      });
-  for (const s of servers)
-    for (const [key, t] of Object.entries(s.tools ?? {}) as [string, any][])
-      result.push({
-        id: `tool:${s.name}:${key}`,
-        name: t.name || key,
-        description: t.description || `Tool on ${s.name}`,
-        kind: "tool",
-        server: s.name,
-        enabled: !s.toolsError,
       });
   for (const m of plugins?.marketplaces ?? [])
     for (const p of m.plugins ?? [])

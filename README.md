@@ -1,12 +1,14 @@
 # MCP Workflow
 
-Version **0.1.1**. A Tauri 2 desktop workflow studio using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.1.2**. A Tauri 2 desktop workflow studio using React, TypeScript, and a Rust bridge to local Codex app-server.
 
-Build repeatable AI workflows from the skills, plugins, apps, and MCP tools your local Codex session can access. Add open-ended instructions to each step, carry context through the flow, and describe API operations in plain language alongside their documentation. The purpose is to make these capabilities usable as an ordered, inspectable process with visible results and approvals.
+Build repeatable AI workflows from the skills, plugins, and apps your local Codex session can access. Add open-ended instructions to each step, carry context through the flow, and describe API operations in plain language alongside their documentation. Codex automatically chooses the underlying tools needed to execute your instructions. The purpose is to make these capabilities usable as an ordered, inspectable process with visible results and approvals.
 
 ## Screenshots
 
-Actual Windows Tauri application, captured during verification:
+Actual Windows Tauri application. Earlier screenshots show the original sidebar; version 0.1.2 removes the Tools category and individual tool entries.
+
+![Version 0.1.2 sidebar with Skills, Plugins, and Apps; tools are chosen automatically during execution](docs/screenshots/simplified-sidebar.png)
 
 ![Workflow studio before connecting](docs/screenshots/workflow-studio.png)
 
@@ -41,11 +43,11 @@ For an API flow, import [examples/api-starter.json](examples/api-starter.json) a
 
 ## Build a workflow
 
-- Search automatically discovered skills, installed plugins, accessible apps, and configured MCP tools in the sidebar; click a capability to add a step. Disabled capabilities cannot be added.
+- Search automatically discovered skills, installed plugins, and accessible apps in the sidebar; click a capability to add a step. Disabled capabilities cannot be added. Individual tools are kept out of the editor: Codex chooses and uses available tools automatically while running your instructions, skills, apps, and API flows. Existing workflow files with explicit tool steps remain compatible.
 - The Apps tab lists connected services by name with a short description. Hover an entry for its full description; click it to add an app step. Version 0.1.1 fixes an icon style collision that previously hid app names and distorted app steps.
 - Add instruction steps with freeform text, or API flows with an HTTP(S) website/endpoint, documentation or documentation URLs, and plain-language instructions.
 - Set shared workflow instructions and an optional model in workflow settings. Steps run sequentially in one Codex thread, carrying earlier outputs forward. Reorder or delete steps from their details panel.
-- Run the workflow to stream results and tool activity. Command and file approvals are shown for explicit approval. User-input requests are supported; unsupported requests can be declined. Additional permission requests are conservatively declined by this version. Stop interrupts the active turn and prevents subsequent steps.
+- Run the workflow to stream results. Optional execution details are collapsed by default. Automatic tool selection still respects Codex permissions: command and file approvals are shown for explicit approval. User-input requests are supported; unsupported requests can be declined. Additional permission requests are conservatively declined by this version. Stop interrupts the active turn and prevents subsequent steps.
 - Definitions save automatically to local webview storage. Export/import JSON for backups and sharing. Import replaces the current definition; export first if you want to keep it. Do not include secrets: definitions and exported JSON are plaintext.
 
 ## Connection scope and API execution
