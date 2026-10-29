@@ -189,7 +189,7 @@ export const newWorkflow = (): Workflow => ({
   steps: [],
 });
 
-export function parseWorkflow(text: string): Workflow {
+export function parseWorkflow(text: string, draft = false): Workflow {
   const w = JSON.parse(text);
   const kinds = [
     "values",
@@ -258,8 +258,7 @@ export function parseWorkflow(text: string): Workflow {
       s.kind === "loop" &&
       (!s.loop ||
         !Number.isInteger(s.loop.times) ||
-        s.loop.times < 1 ||
-        s.loop.times > 1000 ||
+        (!draft && (s.loop.times < 1 || s.loop.times > 1000)) ||
         typeof s.loop.body !== "string" ||
         typeof s.loop.after !== "string")
     )
@@ -271,8 +270,7 @@ export function parseWorkflow(text: string): Workflow {
       (!s.fetch ||
         typeof s.fetch.url !== "string" ||
         !Number.isInteger(s.fetch.maxPages) ||
-        s.fetch.maxPages < 1 ||
-        s.fetch.maxPages > 1000)
+        (!draft && (s.fetch.maxPages < 1 || s.fetch.maxPages > 1000)))
     )
       throw Error("Invalid fetch configuration");
     if (
@@ -304,8 +302,7 @@ export function parseWorkflow(text: string): Workflow {
       s.kind === "wait" &&
       (!s.wait ||
         !Number.isFinite(s.wait.seconds) ||
-        s.wait.seconds < 0 ||
-        s.wait.seconds > 60)
+        (!draft && (s.wait.seconds < 0 || s.wait.seconds > 60)))
     )
       throw Error("Invalid wait duration");
     if (
@@ -333,8 +330,7 @@ export function parseWorkflow(text: string): Workflow {
       for (const f of s.formFields) {
         if (
           typeof f.id !== "string" ||
-          !/^\w[\w-]*$/.test(f.id) ||
-          fieldIds.has(f.id) ||
+          (!draft && (!/^\w[\w-]*$/.test(f.id) || fieldIds.has(f.id))) ||
           typeof f.label !== "string" ||
           ![
             "text",
@@ -368,7 +364,8 @@ export function parseWorkflow(text: string): Workflow {
       throw new Error("Invalid uploaded file references.");
     if (
       s.repeat !== undefined &&
-      (!Number.isInteger(s.repeat) || s.repeat < 1 || s.repeat > 100)
+      (!Number.isInteger(s.repeat) ||
+        (!draft && (s.repeat < 1 || s.repeat > 100)))
     )
       throw new Error("Repeat count must be a whole number from 1 to 100.");
     if (

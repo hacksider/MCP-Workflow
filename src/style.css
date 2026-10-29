@@ -1114,3 +1114,19 @@ label small {
 .provider-library > summary {cursor:pointer;font-size:12px;color:#52715e;margin-bottom:15px;}
 .provider-library .capabilities {max-height:300px;min-height:100px;}
 .library-footer {margin-top:auto;flex-shrink:0;}
+
+.workflow-library-actions,.library-controls,.saved-workflow-actions {display:flex;gap:8px;align-items:center;}
+.workflow-library {width:760px;max-width:90vw;max-height:85vh;overflow-y:auto;}
+.workflow-library .plugin-browser-title {display:flex;justify-content:space-between;gap:18px;align-items:flex-start;}
+.workflow-library label {display:block;font-size:12px;margin:15px 0;}
+.workflow-library label input,.workflow-library label textarea {margin-top:7px;}
+.library-controls {margin:18px 0;}
+.new-workflow-form {border:1px solid #dce4df;border-radius:8px;padding:0 16px 16px;background:#f8faf9;}
+.saved-workflows {display:flex;flex-direction:column;gap:12px;}
+.saved-workflow {border:1px solid #dce4df;border-radius:8px;padding:16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;}
+.saved-workflow > div:first-child {flex:1;min-width:230px;overflow-wrap:anywhere;}
+.saved-workflow h3 {font-size:14px;display:flex;align-items:center;gap:8px;}
+.saved-workflow p {font-size:12px;line-height:1.6;margin:7px 0;color:#64776a;white-space:pre-wrap;}
+.delete-workflow-confirm {width:100%;}
+.delete-workflow-confirm button {margin-right:8px;}
+@media(max-width:1250px){.workflow-library-actions button{padding:8px;font-size:11px;}.topbar{gap:10px;padding:0 16px;}.top-actions{gap:8px;}}

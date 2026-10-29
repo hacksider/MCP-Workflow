@@ -89,7 +89,17 @@ import { FormEditor, FormResult } from "./FormFlow";
 import { executeNativeStep, isNativeStep, needsAgent } from "./native";
 import { validateFormValues, type FormField } from "./workflow";
 
-const storageKey = "mcp-workflow.v1";
+import {
+  activeWorkflow,
+  addWorkflow,
+  createLibrary,
+  deleteWorkflow,
+  loadLibrary,
+  saveLibrary,
+  updateActive,
+  libraryKey,
+} from "./library";
+import { WorkflowLibrary as LibraryDialog } from "./WorkflowLibrary";
 const icons = {
   instruction: FileText,
   api: Globe,
@@ -122,16 +132,33 @@ type Run = {
   formValues?: Record<string, unknown>;
   summary?: string;
 };
-function load(): Workflow {
+function load() {
   try {
-    return parseWorkflow(localStorage.getItem(storageKey) || "");
+    return { library: loadLibrary(localStorage), error: "" };
   } catch {
-    return newWorkflow();
+    return {
+      library: createLibrary(),
+      error:
+        "Could not read the saved workflow library. Automatic saving is paused. Save will preserve a recovery copy before replacing it.",
+    };
   }
 }
 
 function App() {
-  const [workflow, setWorkflow] = useState<Workflow>(load);
+  const [initial] = useState(load);
+  const [library, setLibrary] = useState(initial.library);
+  const [autoSave, setAutoSave] = useState(!initial.error);
+  const [libraryOpen, showLibrary] = useState(false);
+  const [startNew, setStartNew] = useState(false);
+  const [saveNotice, setSaveNotice] = useState("");
+  const workflow = activeWorkflow(library);
+  const setWorkflow = (action: React.SetStateAction<Workflow>) =>
+    setLibrary((lib) =>
+      updateActive(
+        lib,
+        typeof action === "function" ? action(activeWorkflow(lib)) : action,
+      ),
+    );
   const provider = workflow.provider ?? defaultProvider;
   const claudeProvider = isClaude(provider);
   const claudeSession = useRef<string | undefined>(undefined);
@@ -175,7 +202,7 @@ function App() {
   const [requests, setRequests] = useState<RpcEvent[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [events, setEvents] = useState<string[]>([]);
-  const [saveError, setSaveError] = useState("");
+  const [saveError, setSaveError] = useState(initial.error);
   const [storeOpen, showStore] = useState(false);
   const [storeLoading, setStoreLoading] = useState(false);
   const [storeQuery, setStoreQuery] = useState("");
@@ -231,13 +258,93 @@ function App() {
     return () => clearInterval(timer);
   }, [running]);
   useEffect(() => {
+    setSaveNotice("");
+    if (!autoSave) return;
     try {
-      localStorage.setItem(storageKey, JSON.stringify(workflow));
+      saveLibrary(localStorage, library);
       setSaveError("");
     } catch {
-      setSaveError("Local storage is full. Export your workflow to save it.");
+      setSaveError(
+        "Could not save workflows on this device. Export JSON to keep a backup.",
+      );
     }
-  }, [workflow]);
+  }, [library, autoSave]);
+  function resetEditor() {
+    select(null);
+    showSettings(true);
+    setRuns([]);
+    setEvents([]);
+    setRequests([]);
+    setAnswers({});
+    setReachedEnd(false);
+    setRunDuration(0);
+    setActiveFlow(null);
+    setError("");
+    setWarnings([]);
+    setModel("");
+    setCapabilities([]);
+    claudeSession.current = undefined;
+    thread.current = null;
+    turn.current = null;
+  }
+  function openWorkflow(id: string) {
+    if (runningLock.current) return;
+    if (library.activeId !== id) {
+      setLibrary((lib) => ({ ...lib, activeId: id }));
+      resetEditor();
+    }
+    showLibrary(false);
+  }
+  function createWorkflow(name: string, description: string) {
+    if (runningLock.current) return;
+    try {
+      const next = addWorkflow(library, {
+        ...newWorkflow(),
+        name,
+        description,
+        cwd: workflow.cwd,
+        provider: workflow.provider,
+      });
+      setLibrary(next);
+      resetEditor();
+      showLibrary(false);
+    } catch (e) {
+      setError(String(e));
+    }
+  }
+  function addToLibrary(flow: Workflow) {
+    if (runningLock.current) return;
+    setLibrary(addWorkflow(library, flow));
+    resetEditor();
+    showLibrary(false);
+  }
+  function removeWorkflow(id: string) {
+    if (runningLock.current) return;
+    setLibrary((lib) => deleteWorkflow(lib, id));
+    setMetrics((all) => {
+      const next = { ...all };
+      delete next[id];
+      return next;
+    });
+    if (id === workflow.id) resetEditor();
+  }
+  function saveWorkflows() {
+    try {
+      if (!autoSave) {
+        const raw = localStorage.getItem(libraryKey);
+        if (raw !== null)
+          localStorage.setItem(`${libraryKey}.recovery.${Date.now()}`, raw);
+      }
+      saveLibrary(localStorage, library);
+      setAutoSave(true);
+      setSaveError("");
+      setSaveNotice(`Saved ${new Date().toLocaleTimeString()}`);
+    } catch {
+      setSaveError(
+        "Could not save workflows on this device. Export JSON to keep a backup.",
+      );
+    }
+  }
   useEffect(() => {
     if (!desktop) return;
     let disposed = false;
@@ -845,14 +952,14 @@ function App() {
       setError(String(e));
     }
   }
-  function exportWorkflow() {
-    const blob = new Blob([JSON.stringify(workflow, null, 2)], {
+  function exportWorkflow(flow: Workflow = workflow) {
+    const blob = new Blob([JSON.stringify(flow, null, 2)], {
       type: "application/json",
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${workflow.name.replace(/[^a-z0-9_-]/gi, "-") || "workflow"}.json`;
+    a.download = `${flow.name.replace(/[^a-z0-9_-]/gi, "-") || "workflow"}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
@@ -861,11 +968,10 @@ function App() {
     try {
       if (file.size > 5_000_000)
         throw new Error("Workflow files must be under 5 MB.");
-      setWorkflow(parseWorkflow(await file.text()));
-      select(null);
-      setRuns([]);
-      setReachedEnd(false);
-      setRunDuration(0);
+      const imported = parseWorkflow(await file.text());
+      if (runningLock.current)
+        throw Error("Wait for the current run to finish before importing.");
+      addToLibrary(imported);
     } catch (e) {
       setError(String(e));
     }
@@ -908,7 +1014,33 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.11.3</span>
+          <span className="version">0.12.0</span>
+        </div>
+        <div className="workflow-library-actions">
+          <button
+            disabled={running}
+            onClick={() => {
+              setStartNew(false);
+              showLibrary(true);
+            }}
+          >
+            <Layers size={15} />
+            Workflows ({library.workflows.length})
+          </button>
+          <button
+            disabled={running}
+            onClick={() => {
+              setStartNew(true);
+              showLibrary(true);
+            }}
+          >
+            <Plus size={15} />
+            New workflow
+          </button>
+          <button disabled={running} onClick={saveWorkflows}>
+            <Check size={15} />
+            Save
+          </button>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -1110,21 +1242,17 @@ function App() {
             <div className="heading-actions">
               <button
                 disabled={running}
-                title="Load the Amazon-style scraper demonstration (replaces current flow)"
+                title="Add the Amazon-style scraper demonstration to your workflows"
                 onClick={() => {
-                  setWorkflow(
+                  addToLibrary(
                     parseWorkflow(
                       JSON.stringify({
                         ...amazonDemo,
-                        id: crypto.randomUUID(),
                         cwd: workflow.cwd,
+                        provider: workflow.provider,
                       }),
                     ),
                   );
-                  select(null);
-                  setRuns([]);
-                  setReachedEnd(false);
-                  setRunDuration(0);
                 }}
               >
                 Scraper demo
@@ -1140,7 +1268,7 @@ function App() {
               <button
                 className="icon-button"
                 title="Export workflow"
-                onClick={exportWorkflow}
+                onClick={() => exportWorkflow()}
               >
                 <ArrowDownToLine size={17} />
               </button>
@@ -2004,7 +2132,9 @@ function App() {
           </div>
           <div className="inspector-footer">
             <Check size={13} />
-            {saveError ? "Export to save" : "Workflow saved on this device"}
+            {saveError
+              ? "Export to save"
+              : saveNotice || "Workflows saved on this device"}
           </div>
         </aside>
       </div>
@@ -2018,6 +2148,23 @@ function App() {
           e.target.value = "";
         }}
       />
+      {libraryOpen && (
+        <LibraryDialog
+          library={library}
+          startNew={startNew}
+          onClose={() => showLibrary(false)}
+          onOpen={openWorkflow}
+          onCreate={createWorkflow}
+          onDelete={removeWorkflow}
+          onImport={() => importInput.current?.click()}
+          onExport={(id) => {
+            const flow = library.workflows.find(
+              (e) => e.workflow.id === id,
+            )?.workflow;
+            if (flow) exportWorkflow(flow);
+          }}
+        />
+      )}
       {storeOpen && (
         <div className="modal-backdrop">
           <div className="modal plugin-browser">

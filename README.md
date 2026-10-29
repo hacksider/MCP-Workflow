@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.11.3** · Tauri + React + Rust · Windows installer
+Current version: **0.12.0** · Tauri + React + Rust · Windows installer
 
 ![The actual desktop scraper workflow](docs/screenshots/scraper-setup.png)
 
@@ -19,6 +19,12 @@ The Amazon-style example uses **fictional bundled pages**. It fetches two pages,
 [![Watch the desktop demo](docs/screenshots/scraper-completed.png)](docs/demo/amazon-scraper-demo.mp4)
 
 **[Watch the video](docs/demo/amazon-scraper-demo.mp4)** · [Template JSON](examples/amazon-scraper-demo.json) · [Example output](docs/demo/products.json)
+
+## Save and manage workflows
+
+Use **New workflow** to give a flow a name and description. Edits save automatically on this device; **Save** writes the library immediately. **Workflows** lists your saved flows so you can search, open, export or delete them. Deleting asks for confirmation and removes that flow’s run statistics.
+
+Use **Import JSON** to add an independent copy, or **Export workflow** to download the current flow as JSON. Imports and the scraper demo keep your other workflows. JSON contains the workflow definition and file references; uploaded file contents, credentials and run statistics are not bundled.
 
 ## Build your own flow
 

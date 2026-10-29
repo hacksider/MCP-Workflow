@@ -8,6 +8,10 @@
 4. Leave **Next step** as “Next in list”, or choose a destination to branch or loop.
 5. Run, inspect the results, and use **Run again**. Export the workflow JSON to share its definition.
 
+Open **Workflows** to search saved names and descriptions, switch flows, export a specific flow as JSON, or delete it after confirmation. **New workflow** asks for a name and optional description, then opens a blank canvas using the current workspace and provider. Edits autosave; **Save** immediately writes all changes. Change the name and description in the canvas header. Unfinished drafts can be saved, but invalid configuration still prevents execution.
+
+JSON import always creates a separate copy with fresh run statistics, even if its ID matches an existing flow. JSON export contains the current definition, description, settings and file references; it does not bundle uploaded files, credentials or execution history. Deleting a workflow removes its local statistics. Deleting the final workflow opens a fresh blank canvas. Existing single-workflow saves migrate automatically without changing their identity or timing history.
+
 Workflows and cumulative timing statistics are saved on this device. Each run starts with fresh variables and datasets. Files, API writes and computer actions remain external side effects; repeating a run can repeat those actions.
 
 ## Write useful Instructions
@@ -20,7 +24,7 @@ A useful document flow is **Upload → Instructions → Form**. Add an API step 
 
 ## Scraper example
 
-Click **Scraper demo** in the workflow header. This replaces the current definition; export any flow you want to keep first. Choose a workspace and run it.
+Click **Scraper demo** in the workflow header. This adds a separate workflow to your library and keeps your existing flows. Choose a workspace and run it.
 
 ![Scraper setup](screenshots/scraper-setup.png)
 
