@@ -47,6 +47,18 @@ Two pages contain six rows, including one duplicate. A successful run exports fi
 
 For a live site you are authorized to scrape, change the first URL, row selector, field selectors and next-link selector. Inspect that site's actual HTML; the demonstration selectors are not a promise of compatibility with live Amazon pages. Fetch checks robots.txt, accepts HTTP(S) without embedded credentials, limits each response to 2 MB and 30 seconds, and retries transient HTTP failures up to twice. It stops on denied robots rules, access errors, CAPTCHA indicators and redirects. Supply the final permitted URL directly. It does not bypass logins or render JavaScript. A **Computer task** can use a compatible browser runtime when available.
 
+## Design the graph and recover from failures
+
+Every canvas has nonremovable **Beginning** and **End** nodes. Beginning determines the entry step; it is independent of the list order. All terminating routes point to End. Drag any step to arrange it; positions are saved and included in exported JSON. Drag from an output dot to a step’s input to connect it. Drag either end of an existing line to reconnect it. Condition nodes have True/False outputs, Loop nodes have Repeat/Done outputs, and every action has an Error output. Error paths run after retries are exhausted. **Arrange** resets positions; **Fit all** shows the whole graph; **Expand graph** provides more space. Select a step to edit its settings in the inspector. Removing a step sends its incoming routes to End instead of silently connecting them elsewhere.
+
+In **Retries & recovery**, set 0–10 retries, a delay of 0–60 seconds, and an inactivity timeout of 0–3600 seconds (0 disables it). Default: no retries, a two-second retry delay and a 180-second inactivity timeout. Agent activity resets that timer, and pending user approval pauses it. Inactivity requests interruption; a retry waits for the original attempt to end. Native requests may finish their bounded in-flight operation before stopping. If the runtime cannot confirm termination, another attempt is not started concurrently. Unfinished agent/tool work halts the workflow rather than retrying or redirecting unsafely. Missing credentials or other blocked outcomes skip retries and use the error path, if configured.
+
+Retries restore variables, datasets and step outputs to their state before the failed attempt; they do not undo external API writes, file exports or computer actions. Use idempotent operations or service idempotency keys when needed. Every attempt counts toward the global execution limit and appears separately in the console and timing totals.
+
+Click **Loops demo** to add the [conditions, loops and recovery template](../examples/conditions-and-loops.json). Beginning enters a deliberately missing optional input, which fails twice (initial attempt plus one retry), then follows Error to a default value. The condition chooses the enabled path, a counted loop completes its Wait body three times, and the final step reaches End. Setting the default `enabled` value to false demonstrates the alternate exit. To try inactivity recovery, set the body’s Wait to five seconds and its inactivity timeout to one second; it will stop, retry once and follow its Error path to the final step. These native steps need no AI account.
+
+![Completed recovery and loop execution](screenshots/graph-completed.png)
+
 ## Data references and loops
 
 Set values accepts a JSON object, for example `{"url":"https://example.com/catalog"}`. Read it with `{{vars.url}}`. A full reference preserves its JSON type; references embedded in text become strings. Missing references fail clearly. No expressions or JavaScript are evaluated.
@@ -83,7 +95,7 @@ The active step glows. Fast actions show milliseconds. The console reports each 
 
 Stopping a native network request waits for the in-flight request (up to 30 seconds, plus bounded retries). Stopping cannot undo completed file writes, API writes or computer actions. CSV exports quote fields and prefix formula-like values for safer spreadsheet opening; JSON preserves the original values. Exports never overwrite existing files.
 
-Execution is manual in this release. Schedules, unattended background operation, visual drag-and-drop graph wiring, and automatic sign-in are not implemented.
+Execution is manual in this release. Schedules, unattended background operation and automatic sign-in are not implemented.
 
 Developer checks: `npm run check`, `cargo test --manifest-path src-tauri/Cargo.toml`, `npm run desktop:build`. The test suite includes graph routing, loop limits, scraper pagination/deduplication, native CRUD requests, form validation, completion guards, plugin policy and provider environment isolation. A live Claude test reached the official runtime but failed on an expired OAuth token; reauthentication is required. Paid API and Bedrock inference were not exercised. The recorded scraper uses the real desktop app with bundled fixtures.
 

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "id": "conditions-loops-demo",
+  "name": "Conditions, loops and recovery",
+  "description": "A missing optional input retries once, recovers to a default, branches on a condition and completes three loop iterations. Native steps need no AI account.",
+  "cwd": "",
+  "instructions": "Demonstrate explicit Beginning and End anchors, an error recovery path, true/false branching and a counted loop. The missing optional input is intentional.",
+  "maxExecutions": 40,
+  "startStepId": "optional",
+  "steps": [
+    {
+      "id": "optional",
+      "kind": "values",
+      "name": "Try an optional input",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "values": "{\"enabled\":\"{{vars.optionalInput}}\"}",
+      "retry": {
+        "retries": 1,
+        "delaySeconds": 1,
+        "idleSeconds": 5
+      },
+      "onError": "fallback",
+      "next": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "fallback",
+      "kind": "values",
+      "name": "Use a default after the error",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "values": "{\"enabled\":true,\"recovered\":true}",
+      "next": "condition",
+      "position": {
+        "x": 0,
+        "y": 210
+      }
+    },
+    {
+      "id": "condition",
+      "kind": "condition",
+      "name": "Is this task enabled?",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "condition": {
+        "left": "{{vars.enabled}}",
+        "operator": "truthy",
+        "right": "",
+        "yes": "loop",
+        "no": "$end"
+      },
+      "position": {
+        "x": 330,
+        "y": 0
+      }
+    },
+    {
+      "id": "loop",
+      "kind": "loop",
+      "name": "Repeat the body three times",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "loop": {
+        "times": 3,
+        "body": "body",
+        "after": "finish"
+      },
+      "position": {
+        "x": 650,
+        "y": 0
+      }
+    },
+    {
+      "id": "body",
+      "kind": "wait",
+      "name": "Complete one body iteration",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "wait": {
+        "seconds": 0.5
+      },
+      "next": "loop",
+      "retry": {
+        "retries": 1,
+        "delaySeconds": 1,
+        "idleSeconds": 3
+      },
+      "onError": "finish",
+      "position": {
+        "x": 650,
+        "y": 210
+      }
+    },
+    {
+      "id": "finish",
+      "kind": "values",
+      "name": "Finish the task",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "values": "{\"result\":\"Finished after the condition and loop\"}",
+      "next": "$end",
+      "position": {
+        "x": 330,
+        "y": 210
+      }
+    }
+  ]
+}

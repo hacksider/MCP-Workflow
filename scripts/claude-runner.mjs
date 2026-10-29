@@ -110,8 +110,11 @@ export async function runTurn(
               "Claude step failed",
           );
         if (tasks.size || failedTasks.size || tools.size)
-          throw Error(
-            "Claude ended with unfinished or unsuccessful tool/agent work",
+          throw Object.assign(
+            Error(
+              "Claude ended with unfinished or unsuccessful tool/agent work",
+            ),
+            { unsafe: true },
           );
         answer = message.structured_output;
         if (!answer)
@@ -163,7 +166,7 @@ if (process.argv.includes("--stdio")) {
       lines.close();
       process.stdin.pause();
     } catch (e) {
-      send({ kind: "error", message: String(e) });
+      send({ kind: "error", message: String(e), unsafe: !!e.unsafe });
       lines.close();
       process.stdin.pause();
     }

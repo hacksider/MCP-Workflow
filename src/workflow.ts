@@ -1,3 +1,9 @@
+import {
+  validateRetry,
+  UnsafeStepError,
+  BlockedStepError,
+  type RetryPolicy,
+} from "./attempts";
 import type { Provider } from "./providers";
 export type Capability = {
   id: string;
@@ -32,6 +38,9 @@ export type Step = {
   documentation: string;
   repeat?: number;
   next?: string;
+  position?: { x: number; y: number };
+  retry?: RetryPolicy;
+  onError?: string;
   values?: string;
   fetch?: { url: string; maxPages: number };
   extract?: {
@@ -84,6 +93,7 @@ export type Workflow = {
   instructions: string;
   steps: Step[];
   maxExecutions?: number;
+  startStepId?: string;
   provider?: Provider;
 };
 export const outcomeSchema = {
@@ -230,6 +240,8 @@ export function parseWorkflow(text: string, draft = false): Workflow {
       ))
   )
     throw Error("Invalid AI provider");
+  if (w.startStepId !== undefined && typeof w.startStepId !== "string")
+    throw Error("Invalid beginning destination");
   const ids = new Set();
   for (const s of w.steps) {
     if (
@@ -241,6 +253,16 @@ export function parseWorkflow(text: string, draft = false): Workflow {
     )
       throw new Error("Invalid or duplicate workflow step.");
     ids.add(s.id);
+    if (["$start", "$end"].includes(s.id))
+      throw Error("Step ID is reserved for the beginning or end");
+    if (
+      s.position &&
+      (!Number.isFinite(s.position.x) || !Number.isFinite(s.position.y))
+    )
+      throw Error("Invalid step position");
+    if (s.retry !== undefined) validateRetry(s.retry, draft);
+    if (s.onError !== undefined && typeof s.onError !== "string")
+      throw Error("Invalid error destination");
     if (s.next !== undefined && typeof s.next !== "string")
       throw Error("Invalid next destination");
     if (
@@ -600,16 +622,18 @@ export class CompletionGuard {
     }
   }
   finish(turn: any, finalText: string) {
-    if (turn.status !== "completed")
-      throw new Error(turn.error?.message || `Step ${turn.status}.`);
     if (
       this.tools.size ||
       [...this.agents.values()].some((status) => status !== "completed")
     )
-      throw new Error(
+      throw new UnsafeStepError(
         "This step still has unfinished or unsuccessful agent/tool work. The next step will not start.",
       );
+    if (turn.status !== "completed")
+      throw new Error(turn.error?.message || `Step ${turn.status}.`);
     const outcome = parseOutcome(finalText);
+    if (outcome.status === "blocked")
+      throw new BlockedStepError(outcome.summary);
     if (outcome.status !== "completed")
       throw new Error(`Step ${outcome.status}: ${outcome.summary}`);
     return outcome;

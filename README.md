@@ -4,9 +4,9 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.12.0** · Tauri + React + Rust · Windows installer
+Current version: **0.13.0** · Tauri + React + Rust · Windows installer
 
-![The actual desktop scraper workflow](docs/screenshots/scraper-setup.png)
+![Visual graph with Beginning, End, conditions, loops and recovery](docs/screenshots/graph-editor.png)
 
 ## Try the scraper demo
 
@@ -24,7 +24,17 @@ The Amazon-style example uses **fictional bundled pages**. It fetches two pages,
 
 Use **New workflow** to give a flow a name and description. Edits save automatically on this device; **Save** writes the library immediately. **Workflows** lists your saved flows so you can search, open, export or delete them. Deleting asks for confirmation and removes that flow’s run statistics.
 
+![Saved workflows with names and descriptions](docs/screenshots/workflow-library.png)
+
 Use **Import JSON** to add an independent copy, or **Export workflow** to download the current flow as JSON. Imports and the scraper demo keep your other workflows. JSON contains the workflow definition and file references; uploaded file contents, credentials and run statistics are not bundled.
+
+## Connect, branch, loop and recover
+
+Every graph includes **Beginning** and **End**. Drag steps to redesign the layout. Drag a connector dot to another step, or drag an existing line end to reconnect it. True/False, Repeat/Done and Error paths have their own connectors. Zoom, fit all or expand the graph to explore larger workflows.
+
+Open a step’s **Retries & recovery** to choose retries, retry delay, inactivity timeout and an error destination. Retries wait for the previous attempt to stop; waiting for your approval pauses the inactivity timer. Retrying can repeat external actions, so retries default to zero.
+
+Click **Loops demo** for a working [conditions, loops and recovery example](examples/conditions-and-loops.json). It intentionally fails a missing optional input, retries once, recovers to a default, branches on a condition, completes three loop iterations and reaches End. It needs no AI account.
 
 ## Build your own flow
 

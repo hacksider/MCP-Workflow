@@ -100,7 +100,7 @@ pub async fn claude_turn(
    let event:Value=serde_json::from_str(&line).map_err(|_|"Invalid Claude helper response")?;
    match event["kind"].as_str(){
     Some("result")=>return Ok(event),
-    Some("error")=>return Err(event["message"].as_str().unwrap_or("Claude failed").to_owned()),
+    Some("error")=>return Err(format!("{}{}",if event["unsafe"].as_bool().unwrap_or(false){"UNFINISHED_AGENT_WORK: "}else{""},event["message"].as_str().unwrap_or("Claude failed"))),
     _=>{let _=app.emit("provider-event",event);}
    }
   }

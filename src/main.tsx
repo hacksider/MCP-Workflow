@@ -81,6 +81,15 @@ import {
   validatePluginSelection,
   type Plugin,
 } from "./plugins";
+import { GraphEditor } from "./GraphEditor";
+import { removeStep } from "./graph";
+import {
+  defaultRetry,
+  BlockedStepError,
+  UnsafeStepError,
+  type AttemptControl,
+} from "./attempts";
+import loopDemo from "../examples/conditions-and-loops.json";
 import { runGraph, newContext, validateRoutes } from "./routing";
 import { ScraperEditor } from "./ScraperEditor";
 import amazonDemo from "../examples/amazon-scraper-demo.json";
@@ -214,10 +223,14 @@ function App() {
   const activeStep = useRef<string | null>(null);
   const finalAnswer = useRef("");
   const cancelled = useRef(false);
+  const attemptControl = useRef<AttemptControl | null>(null);
   const runningLock = useRef(false);
   const completionGuard = useRef(new CompletionGuard());
   const waiter = useRef<((turn: any) => void) | null>(null);
   const importInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    attemptControl.current?.pause(requests.length > 0);
+  }, [requests]);
   const current = workflow.steps.find((s) => s.id === selected);
   const stats = metrics[workflow.id!] ?? emptyMetrics();
   const update = (patch: Partial<Workflow>) =>
@@ -351,6 +364,8 @@ function App() {
     const cleanup: (() => void)[] = [];
     const keep = (fn: () => void) => (disposed ? fn() : cleanup.push(fn));
     listen<any>("provider-event", ({ payload: e }) => {
+      attemptControl.current?.heartbeat();
+      if (e.kind === "approval") attemptControl.current?.pause(true);
       if (e.kind === "approval")
         setRequests((r) => [
           ...r,
@@ -372,7 +387,9 @@ function App() {
     }).then(keep);
     onEvent((event) => {
       const p = event.params;
+      attemptControl.current?.heartbeat();
       if (event.id !== undefined) {
+        attemptControl.current?.pause(true);
         setRequests((r) => [...r, event]);
         return;
       }
@@ -697,7 +714,6 @@ function App() {
       [];
     claudeSession.current = undefined;
     const context = newContext();
-    const priorResults = context.steps;
     let success = false;
     runStarted.current = performance.now();
     setNow(runStarted.current);
@@ -730,10 +746,37 @@ function App() {
         });
         thread.current = started.thread.id;
       }
+      const executionWorkflow = {
+        ...workflow,
+        steps: [...new Map(plan.map((p) => [p.step.id, p.step])).values()],
+      };
       await runGraph(
-        workflow,
+        executionWorkflow,
         context,
-        async ({ id: runId, step, iteration, total, prompt }) => {
+        async (
+          { id: runId, step, iteration, total, prompt },
+          _context,
+          control,
+        ) => {
+          attemptControl.current = control;
+          const interruptAttempt = () => {
+            if (isNativeStep(step)) return;
+            log(
+              `${step.name}: requesting cancellation; waiting for the active attempt to finish.`,
+            );
+            if (claudeProvider)
+              void invoke("claude_control", {
+                message: { type: "stop" },
+              }).catch((e) => log(String(e)));
+            else if (thread.current && turn.current)
+              void rpc("turn/interrupt", {
+                threadId: thread.current,
+                turnId: turn.current,
+              }).catch((e) => log(String(e)));
+          };
+          control.signal.addEventListener("abort", interruptAttempt, {
+            once: true,
+          });
           const attemptStarted = performance.now();
           const timing = { stepId: step.id, status: "running", durationMs: 0 };
           timings.push(timing);
@@ -748,7 +791,10 @@ function App() {
               id: runId,
               stepId: step.id,
               name:
-                total > 1 ? `${step.name} (${iteration}/${total})` : step.name,
+                (total > 1
+                  ? `${step.name} (${iteration}/${total})`
+                  : step.name) +
+                (control.attempt > 1 ? ` · retry ${control.attempt - 1}` : ""),
               output: "",
               status: "running",
               startedAt: attemptStarted,
@@ -761,7 +807,7 @@ function App() {
                 step,
                 context,
                 workflow.cwd,
-                () => cancelled.current,
+                () => cancelled.current || control.signal.aborted,
               );
               if (cancelled.current)
                 throw new Error(
@@ -809,7 +855,7 @@ function App() {
                 outputSchema: outcomeSchema,
               });
               if (waiter.current) turn.current = result.turn.id;
-              if (cancelled.current && turn.current)
+              if ((cancelled.current || control.signal.aborted) && turn.current)
                 await rpc("turn/interrupt", {
                   threadId: thread.current,
                   turnId: turn.current,
@@ -844,6 +890,14 @@ function App() {
                   "",
               );
             }
+            if (control.signal.aborted)
+              throw Error(
+                "Attempt stopped after cancellation or inactivity timeout.",
+              );
+            if (report.status === "blocked")
+              throw new BlockedStepError(
+                `${report.summary}\n${report.outputs}`,
+              );
             if (report.status !== "completed")
               throw new Error(`${report.summary}\n${report.outputs}`);
             const formValues =
@@ -856,7 +910,7 @@ function App() {
             } catch {
               /* Text outputs remain text. */
             }
-            priorResults[step.id] = { summary: report.summary, outputs: data };
+            context.steps[step.id] = { summary: report.summary, outputs: data };
             timing.status = "completed";
             setRuns((r) =>
               r.map((s) =>
@@ -897,8 +951,24 @@ function App() {
                   : s,
               ),
             );
+            if (e instanceof UnsafeStepError) throw e;
+            if (!isNativeStep(step) && !claudeProvider && turn.current)
+              throw new UnsafeStepError(
+                "The runtime has not confirmed the previous turn stopped. Reconnect before retrying.",
+              );
+            try {
+              if (parseOutcome(finalAnswer.current).status === "blocked")
+                throw new BlockedStepError(readable || String(e));
+            } catch (blocked) {
+              if (blocked instanceof BlockedStepError) throw blocked;
+            }
+            if (String(e).includes("UNFINISHED_AGENT_WORK:"))
+              throw new UnsafeStepError(String(e));
             throw e;
           } finally {
+            control.signal.removeEventListener("abort", interruptAttempt);
+            attemptControl.current = null;
+            setRequests([]);
             timing.durationMs = performance.now() - attemptStarted;
             setRuns((r) =>
               r.map((s) =>
@@ -908,6 +978,7 @@ function App() {
           }
         },
         () => cancelled.current,
+        log,
       );
       success = !cancelled.current;
       setReachedEnd(success);
@@ -977,6 +1048,7 @@ function App() {
     }
   }
   async function answer(request: RpcEvent, result: any, unsupported = false) {
+    attemptControl.current?.heartbeat();
     try {
       if (String(request.id).startsWith("claude:"))
         await invoke("claude_control", {
@@ -1014,7 +1086,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.12.0</span>
+          <span className="version">0.13.0</span>
         </div>
         <div className="workflow-library-actions">
           <button
@@ -1258,6 +1330,22 @@ function App() {
                 Scraper demo
               </button>
               <button
+                disabled={running}
+                onClick={() =>
+                  addToLibrary(
+                    parseWorkflow(
+                      JSON.stringify({
+                        ...loopDemo,
+                        cwd: workflow.cwd,
+                        provider: workflow.provider,
+                      }),
+                    ),
+                  )
+                }
+              >
+                Loops demo
+              </button>
+              <button
                 className="icon-button"
                 title="Import workflow"
                 disabled={running}
@@ -1326,182 +1414,24 @@ function App() {
               <Settings2 size={14} /> Workflow settings
             </button>
           </div>
-          <div className="canvas">
-            <div className="flow">
-              <div
-                className={`trigger ${running && !activeFlow ? "running" : ""}`}
-              >
-                <span>
-                  <Command size={17} />
-                </span>
-                <div>
-                  <strong>Manual trigger</strong>
-                  <small>
-                    {running && !activeFlow
-                      ? "Preparing required plugins and skills…"
-                      : "Start when you’re ready"}
-                  </small>
-                </div>
-                <span className="trigger-label">START</span>
-              </div>
-              <div className="connector">
-                <ArrowDown size={13} />
-              </div>
-              {workflow.steps.map((s, i) => {
-                const Icon = icons[s.kind];
-                const run = runs.filter((r) => r.stepId === s.id).at(-1);
-                return (
-                  <React.Fragment key={s.id}>
-                    <button
-                      id={`flow-step-${s.id}`}
-                      aria-current={
-                        run?.status === "running" ? "step" : undefined
-                      }
-                      className={`step-card ${selected === s.id ? "selected" : ""} ${run?.status || ""}`}
-                      onClick={() => {
-                        select(s.id);
-                        showSettings(false);
-                      }}
-                    >
-                      <span className={`step-icon ${s.kind}`}>
-                        <Icon size={19} />
-                      </span>
-                      <span className="step-summary">
-                        <small>
-                          STEP {String(i + 1).padStart(2, "0")}{" "}
-                          <span>
-                            ·{" "}
-                            {s.kind === "api"
-                              ? "API flow"
-                              : s.kind === "instruction"
-                                ? "Instructions"
-                                : s.kind}
-                            {(s.repeat ?? 1) > 1 ? ` · ×${s.repeat}` : ""}
-                          </span>
-                        </small>
-                        <strong>{s.name}</strong>
-                        <span>
-                          {s.instructions ||
-                            (s.kind === "condition"
-                              ? `True: ${workflow.steps.find((x) => x.id === s.condition?.yes)?.name ?? s.condition?.yes ?? "next"}; false: ${workflow.steps.find((x) => x.id === s.condition?.no)?.name ?? s.condition?.no ?? "next"}`
-                              : s.kind === "loop"
-                                ? `Loop ${s.loop?.times ?? 1} times; body must return here`
-                                : s.kind === "fetch"
-                                  ? `${s.fetch?.url ?? ""} (limit ${s.fetch?.maxPages ?? 1} pages)`
-                                  : s.kind === "extract"
-                                    ? `${s.extract?.rowSelector ?? ""} → ${s.extract?.fields.map((f) => f.name).join(", ") ?? ""}`
-                                    : s.kind === "collect"
-                                      ? `${s.collect?.dataset ?? ""} · unique ${s.collect?.uniqueKey || "rows"}`
-                                      : s.kind === "export"
-                                        ? `${s.export?.dataset ?? ""} → ${s.export?.format.toUpperCase() ?? ""}`
-                                        : s.kind === "wait"
-                                          ? `Pause ${s.wait?.seconds ?? 0} seconds`
-                                          : s.kind === "values"
-                                            ? (s.values ?? "Set named inputs")
-                                            : "Configure this step")}
-                          {s.next &&
-                            ` | Next: ${workflow.steps.find((x) => x.id === s.next)?.name ?? s.next}`}
-                        </span>
-                      </span>
-                      {run && (
-                        <small className="step-timer">
-                          {formatDuration(
-                            run.durationMs ?? now - run.startedAt,
-                          )}
-                        </small>
-                      )}
-                      {run?.status === "running" ? (
-                        <LoaderCircle className="spin" size={17} />
-                      ) : run?.status === "completed" ? (
-                        <Check size={17} />
-                      ) : (
-                        <ChevronRight size={17} />
-                      )}
-                    </button>
-                    <div className="connector">
-                      <ArrowDown size={13} />
-                    </div>
-                  </React.Fragment>
-                );
-              })}
-              {!workflow.steps.length && (
-                <div className="canvas-empty">
-                  <span className="hero-icon">
-                    <GitBranch size={28} />
-                  </span>
-                  <h2>
-                    Describe it once.
-                    <br />
-                    Run it whenever you need.
-                  </h2>
-                  <p>
-                    Turn a repeatable task into an AI automation.
-                    <br />
-                    Start with Instructions and describe what to do.
-                  </p>
-                </div>
-              )}
-              <div className="add-step">
-                <button disabled={running} onClick={() => add("instruction")}>
-                  <Plus size={16} /> Instructions
-                </button>
-                <button disabled={running} onClick={() => add("api")}>
-                  <Globe size={16} /> API flow
-                </button>
-                <button disabled={running} onClick={() => add("upload")}>
-                  <Upload size={16} /> Upload
-                </button>
-                <button disabled={running} onClick={() => add("form")}>
-                  <FileText size={16} /> Form
-                </button>
-                {(
-                  [
-                    "values",
-                    "fetch",
-                    "extract",
-                    "collect",
-                    "wait",
-                    "export",
-                  ] as Step["kind"][]
-                ).map((kind) => (
-                  <button
-                    key={kind}
-                    disabled={running}
-                    onClick={() => add(kind)}
-                  >
-                    <Plus size={16} />
-                    {
-                      (
-                        {
-                          values: "Set values",
-                          fetch: "Fetch page",
-                          extract: "Extract data",
-                          collect: "Collect rows",
-                          wait: "Wait",
-                          export: "Export file",
-                        } as Record<string, string>
-                      )[kind]
-                    }
-                  </button>
-                ))}
-                <button disabled={running} onClick={() => add("condition")}>
-                  <GitBranch size={16} /> Condition
-                </button>
-                <button disabled={running} onClick={() => add("loop")}>
-                  <RefreshCw size={16} /> Loop
-                </button>
-                <button disabled={running} onClick={() => add("computer")}>
-                  <Monitor size={16} /> Computer task
-                </button>
-              </div>
-              <div
-                ref={endRef}
-                className={`flow-end ${reachedEnd ? "completed" : ""}`}
-              >
-                <Circle size={8} />{" "}
-                {reachedEnd ? "WORKFLOW COMPLETED" : "END OF WORKFLOW"}
-              </div>
-            </div>
+          <div className="canvas graph-canvas">
+            <GraphEditor
+              key={workflow.id}
+              workflow={workflow}
+              onChange={(next) => {
+                if (!runningLock.current) setWorkflow(next);
+              }}
+              onSelect={(id) => {
+                select(id);
+                showSettings(false);
+              }}
+              selected={selected}
+              running={running}
+              active={activeFlow}
+              reachedEnd={reachedEnd}
+              runs={runs}
+              now={now}
+            />
           </div>
           <section className="run-panel">
             <div className="run-heading">
@@ -1821,6 +1751,89 @@ function App() {
                   steps={workflow.steps}
                   onChange={editStep}
                 />
+                <details className="retry-editor">
+                  <summary>Retries & recovery</summary>
+                  <label>
+                    Retries after a failed attempt
+                    <input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={current.retry?.retries ?? defaultRetry.retries}
+                      onChange={(e) =>
+                        editStep({
+                          retry: {
+                            ...(current.retry ?? defaultRetry),
+                            retries: Number(e.target.value),
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                  <label>
+                    Delay before retry (seconds)
+                    <input
+                      type="number"
+                      min={0}
+                      max={60}
+                      value={
+                        current.retry?.delaySeconds ?? defaultRetry.delaySeconds
+                      }
+                      onChange={(e) =>
+                        editStep({
+                          retry: {
+                            ...(current.retry ?? defaultRetry),
+                            delaySeconds: Number(e.target.value),
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                  <label>
+                    No activity timeout (seconds)
+                    <input
+                      type="number"
+                      min={0}
+                      max={3600}
+                      value={
+                        current.retry?.idleSeconds ?? defaultRetry.idleSeconds
+                      }
+                      onChange={(e) =>
+                        editStep({
+                          retry: {
+                            ...(current.retry ?? defaultRetry),
+                            idleSeconds: Number(e.target.value),
+                          },
+                        })
+                      }
+                    />
+                    <small>
+                      0 disables the timeout. Pauses while waiting for your
+                      approval. An unresponsive attempt must finish stopping
+                      before a retry begins.
+                    </small>
+                  </label>
+                  <label>
+                    After retries are exhausted
+                    <select
+                      value={current.onError ?? ""}
+                      onChange={(e) => editStep({ onError: e.target.value })}
+                    >
+                      <option value="">Stop workflow</option>
+                      <option value="$end">Go to End</option>
+                      {workflow.steps.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          Redirect: {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <small>
+                    Retries repeat the action and may repeat API writes or other
+                    side effects. Blocked steps skip retries and use the chosen
+                    error path, or stop.
+                  </small>
+                </details>
                 <RoutingEditor
                   step={current}
                   steps={workflow.steps}
@@ -1919,9 +1932,7 @@ function App() {
                   <button
                     className="danger"
                     onClick={() => {
-                      update({
-                        steps: workflow.steps.filter((s) => s.id !== selected),
-                      });
+                      setWorkflow(removeStep(workflow, selected!));
                       select(null);
                     }}
                   >

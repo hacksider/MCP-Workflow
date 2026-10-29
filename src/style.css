@@ -1130,3 +1130,26 @@ label small {
 .delete-workflow-confirm {width:100%;}
 .delete-workflow-confirm button {margin-right:8px;}
 @media(max-width:1250px){.workflow-library-actions button{padding:8px;font-size:11px;}.topbar{gap:10px;padding:0 16px;}.top-actions{gap:8px;}}
+
+.canvas.graph-canvas {padding:0;overflow:hidden;position:relative;min-height:370px;}
+.graph-editor {width:100%;height:100%;min-height:370px;background:#f8faf9;}
+.graph-editor.expanded {position:fixed;inset:100px 18px 18px;width:auto;height:auto;z-index:30;border:1px solid #b7cbbf;border-radius:10px;box-shadow:0 12px 50px #152b3040;}
+.graph-node {width:240px;min-height:105px;background:white;border:1px solid #bfd1c5;border-radius:10px;padding:17px 20px 28px;box-shadow:0 3px 8px #254b3010;color:#294736;position:relative;}
+.graph-node > small {font-size:9px;letter-spacing:1px;display:block;}
+.graph-node strong {font-size:14px;display:block;margin:7px 0;white-space:normal;overflow-wrap:anywhere;}
+.graph-node > span {font-size:10px;color:#68816e;}
+.graph-node.selected {border:2px solid #4e966b;}
+.graph-node.running {border-color:#45915a;animation:active-flow-glow 1.5s ease-in-out infinite;box-shadow:0 0 20px #61a46a70;}
+.graph-node.completed {border-color:#69a570;background:#f4faf5;}
+.graph-node.failed {border-color:#ce8564;background:#fff8f2;}
+.graph-node.terminal {border-radius:28px;background:#eaf3ed;min-height:86px;}
+.graph-node .react-flow__handle {width:11px;height:11px;border:2px solid white;background:#538363;}
+.graph-ports > div {position:absolute;bottom:0;}
+.graph-ports > div > span {position:absolute;font-size:10px;bottom:5px;transform:translateX(-50%);color:#6b8271;}
+.graph-ports .react-flow__handle {left:0;}
+.graph-node .graph-error-port {position:absolute;right:7px;top:42%;font-size:8px;letter-spacing:0;color:#b47151;}
+.graph-hint {font-size:10px;color:#6f8675;background:#f8faf9dc;padding:8px;border-radius:6px;display:block;max-width:230px;}
+.graph-editor .react-flow__panel button {font-size:10px;padding:7px;margin:0 2px;}
+.graph-editor .react-flow__edge-textbg {fill:#f7faf8;}
+.retry-editor {margin:18px 0;padding:10px;border:1px solid #dce4df;border-radius:8px;}
+.retry-editor > summary {cursor:pointer;font-size:12px;color:#4a6f56;}

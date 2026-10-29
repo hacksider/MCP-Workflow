@@ -1,3 +1,9 @@
+import {
+  defaultRetry,
+  monitoredAttempt,
+  retryDelay,
+  type AttemptControl,
+} from "./attempts";
 import { buildRunPlan, type Workflow, type PlannedStep } from "./workflow";
 export type Context = {
   steps: Record<string, { summary: string; outputs: any }>;
@@ -62,9 +68,16 @@ export function validateRoutes(workflow: Workflow) {
     (workflow.maxExecutions ?? 100) > 10000
   )
     throw new Error("Execution limit must be 1–10000");
+  if (
+    workflow.startStepId &&
+    workflow.startStepId !== "$end" &&
+    !ids.has(workflow.startStepId)
+  )
+    throw Error("Missing beginning destination");
   for (const s of workflow.steps) {
     const targets = [
       s.next,
+      s.onError,
       s.condition?.yes,
       s.condition?.no,
       s.loop?.body,
@@ -95,31 +108,90 @@ export function validateRoutes(workflow: Workflow) {
 export async function runGraph(
   workflow: Workflow,
   context: Context,
-  execute: (entry: PlannedStep, context: Context) => Promise<void>,
+  execute: (
+    entry: PlannedStep,
+    context: Context,
+    control: AttemptControl,
+  ) => Promise<void>,
   cancelled: () => boolean,
+  notify: (message: string) => void = () => {},
 ) {
   const plan = buildRunPlan(workflow);
   validateRoutes(workflow);
   const steps = [...new Map(plan.map((p) => [p.step.id, p.step])).values()];
   const loops = new Map<string, number>();
-  let index = 0,
+  let index =
+      workflow.startStepId === "$end"
+        ? steps.length
+        : workflow.startStepId
+          ? steps.findIndex((s) => s.id === workflow.startStepId)
+          : 0,
     count = 0;
   while (index < steps.length && !cancelled()) {
     const step = steps[index];
+    let errorTarget: string | undefined;
     for (const base of plan.filter((p) => p.step.id === step.id)) {
-      if (cancelled()) return;
-      if (++count > (workflow.maxExecutions ?? 100))
-        throw new Error(
-          "Execution limit reached. Check loop exits or raise the workflow limit.",
-        );
-      await execute({ ...base, id: `${base.id}:visit-${count}` }, context);
+      const policy = step.retry ?? defaultRetry;
+      for (let attempt = 1; attempt <= policy.retries + 1; attempt++) {
+        if (cancelled()) return;
+        if (++count > (workflow.maxExecutions ?? 100))
+          throw Error(
+            "Execution limit reached. Check loops, retries, or raise the workflow limit.",
+          );
+        const checkpoint = structuredClone(context);
+        try {
+          await monitoredAttempt(
+            attempt,
+            policy,
+            (control) =>
+              execute(
+                { ...base, id: `${base.id}:visit-${count}:attempt-${attempt}` },
+                context,
+                control,
+              ),
+            cancelled,
+            () =>
+              notify(
+                `${step.name}: no activity; stopping this attempt before retrying.`,
+              ),
+          );
+          break;
+        } catch (error) {
+          context.steps = checkpoint.steps;
+          context.vars = checkpoint.vars;
+          context.datasets = checkpoint.datasets;
+          if (cancelled()) return;
+          if ((error as any)?.redirectable === false) throw error;
+          if (
+            attempt <= policy.retries &&
+            (error as any)?.retryable !== false
+          ) {
+            notify(
+              `${step.name}: attempt ${attempt} failed. Retrying in ${policy.delaySeconds}s. ${String(error)}`,
+            );
+            await retryDelay(policy.delaySeconds, cancelled);
+            continue;
+          }
+          if (step.onError) {
+            context.steps[step.id] = {
+              summary: `Failed after ${attempt} attempt(s)`,
+              outputs: { error: String(error), attempts: attempt },
+            };
+            errorTarget = step.onError;
+            notify(`${step.name}: redirected to its error destination.`);
+            break;
+          }
+          throw error;
+        }
+      }
+      if (errorTarget) break;
     }
-    let target = step.next;
-    if (step.kind === "condition")
+    let target = errorTarget ?? step.next;
+    if (!errorTarget && step.kind === "condition")
       target = conditionResult(step.condition!, context)
         ? step.condition!.yes
         : step.condition!.no;
-    if (step.kind === "loop") {
+    if (!errorTarget && step.kind === "loop") {
       const n = loops.get(step.id) ?? 0;
       if (n < step.loop!.times) {
         loops.set(step.id, n + 1);
@@ -129,6 +201,7 @@ export async function runGraph(
         target = step.loop!.after;
       }
     }
+    if (errorTarget) target = errorTarget;
     if (target === "$end") return;
     index = target ? steps.findIndex((s) => s.id === target) : index + 1;
   }
