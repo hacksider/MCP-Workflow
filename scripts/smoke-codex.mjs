@@ -32,7 +32,7 @@ const timeout = setTimeout(() => {
 }, 90000);
 try {
   await rpc("initialize", {
-    clientInfo: { name: "mcp_workflow_test", version: "0.4.0" },
+    clientInfo: { name: "mcp_workflow_test", version: "0.5.0" },
     capabilities: { experimentalApi: true },
   });
   child.stdin.write('{"method":"initialized"}\n');

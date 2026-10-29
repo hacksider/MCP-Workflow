@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "name": "Computer task example",
+  "description": "Use an available computer-use runtime to verify a result in Calculator.",
+  "cwd": "",
+  "instructions": "Follow the computer-use skill and verify the visible result. Do not substitute shell commands for desktop interaction.",
+  "steps": [
+    {
+      "id": "calculator",
+      "kind": "computer",
+      "name": "Check a calculation",
+      "instructions": "Open Calculator using the supported computer-use runtime, calculate 125 multiplied by 8, and verify that the displayed result is 1000. Report the verified result. If no compatible runtime is available, return blocked without claiming success.",
+      "repeat": 1,
+      "endpoint": "",
+      "documentation": ""
+    }
+  ]
+}

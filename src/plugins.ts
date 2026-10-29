@@ -1,4 +1,4 @@
-import type { PlannedStep } from "./workflow";
+import type { Capability, PlannedStep } from "./workflow";
 export type Plugin = {
   id: string;
   name: string;
@@ -24,8 +24,17 @@ export function pluginCatalog(cli: any, metadata: any): Plugin[] {
   return [...entries.values()]
     .map((p) => {
       const detail = descriptions.get(p.pluginId);
-      const latest = detail?.version ?? p.version ?? null;
-      const local = detail?.localVersion ?? (p.installed ? p.version : null);
+      const local = p.installed
+        ? (p.version ?? detail?.localVersion ?? null)
+        : null;
+      const advertised = detail?.version ?? p.version ?? null;
+      // CLI installation receipts are newer than app-server's descriptive cache.
+      const latest =
+        local &&
+        advertised &&
+        local.localeCompare(advertised, undefined, { numeric: true }) > 0
+          ? local
+          : advertised;
       return {
         id: p.pluginId,
         name: p.name,
@@ -122,6 +131,14 @@ export function explicitPlugins(
 ): string[] {
   const required = new Set<string>();
   for (const { step } of plan) {
+    if (step.kind === "computer") {
+      const plugin = catalog.find((p) => p.name === "computer-use");
+      if (!plugin?.allowed)
+        throw new Error(
+          "Computer use is not available in this account catalog. The next step will not start.",
+        );
+      required.add(plugin.id);
+    }
     const c = step.capability;
     if (!c) continue;
     const id =
@@ -133,6 +150,38 @@ export function explicitPlugins(
     }
   }
   return [...required];
+}
+export function bindRuntimeSkills(
+  plan: PlannedStep[],
+  skills: Capability[],
+  catalog: Plugin[],
+): void {
+  for (const entry of plan) {
+    if (entry.step.kind === "computer") {
+      const plugin = catalog.find((p) => p.name === "computer-use");
+      const skill = skills.find(
+        (c) =>
+          c.enabled &&
+          c.pluginId === plugin?.id &&
+          /computer[- ]use/i.test(c.name),
+      );
+      if (!skill)
+        throw new Error(
+          "The computer-use skill is unavailable on this host. The automation was stopped.",
+        );
+      entry.step.capability = skill;
+    } else if (entry.step.capability?.kind === "skill") {
+      const previous = entry.step.capability;
+      const latest = skills.find(
+        (c) =>
+          c.name === previous.name &&
+          (!previous.pluginId || c.pluginId === previous.pluginId),
+      );
+      if (!latest?.enabled)
+        throw new Error(`Required skill is unavailable: ${previous.name}`);
+      entry.step.capability = latest;
+    }
+  }
 }
 export const pluginSelectionSchema = {
   type: "object",

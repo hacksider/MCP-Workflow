@@ -287,6 +287,11 @@ h2 {
   background: #edf6f4;
   border-color: #dcebe7;
 }
+.step-icon.computer {
+  color: #5e7aab;
+  background: #eff2fb;
+  border-color: #dfe5f3;
+}
 .cap-icon.app,
 .step-icon.app {
   color: #638c77;

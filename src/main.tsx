@@ -15,6 +15,7 @@ import {
   Globe,
   Layers,
   LoaderCircle,
+  Monitor,
   Play,
   Plus,
   Plug,
@@ -46,6 +47,7 @@ import {
   newWorkflow,
   normalizeCapabilities,
   outcomeSchema,
+  parseOutcome,
   parseWorkflow,
   buildRunPlan,
   runSequential,
@@ -64,6 +66,7 @@ import {
 } from "./metrics";
 import {
   explicitPlugins,
+  bindRuntimeSkills,
   pluginCatalog,
   pluginSelectionSchema,
   shortlistPlugins,
@@ -79,6 +82,7 @@ const icons = {
   plugin: Plug,
   tool: Braces,
   app: Layers,
+  computer: Monitor,
 };
 type StepState = "running" | "completed" | "failed" | "interrupted";
 type Run = {
@@ -497,18 +501,7 @@ function App() {
       forceReload: true,
     });
     const skills = normalizeCapabilities(fresh, null, []);
-    for (const entry of plan)
-      if (entry.step.capability?.kind === "skill") {
-        const previous = entry.step.capability;
-        const latest = skills.find(
-          (c) =>
-            c.name === previous.name &&
-            (!previous.pluginId || c.pluginId === previous.pluginId),
-        );
-        if (!latest?.enabled)
-          throw new Error(`Required skill is unavailable: ${previous.name}`);
-        entry.step.capability = latest;
-      }
+    bindRuntimeSkills(plan, skills, catalog);
     log("Required plugins and skills are ready.");
   }
   async function execute() {
@@ -652,10 +645,19 @@ function App() {
             );
           } catch (e) {
             timing.status = cancelled.current ? "interrupted" : "failed";
+            let readable: string | undefined;
+            try {
+              const report = parseOutcome(finalAnswer.current);
+              readable = [report.summary, report.outputs]
+                .filter(Boolean)
+                .join("\n\n");
+            } catch {
+              /* Keep partial output when no final report exists. */
+            }
             setRuns((r) =>
               r.map((s) =>
                 s.id === runId && s.status === "running"
-                  ? { ...s, status: "failed" }
+                  ? { ...s, status: "failed", output: readable ?? s.output }
                   : s,
               ),
             );
@@ -771,7 +773,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.4.0</span>
+          <span className="version">0.5.0</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -1088,6 +1090,9 @@ function App() {
                 <button disabled={running} onClick={() => add("api")}>
                   <Globe size={16} /> API flow
                 </button>
+                <button disabled={running} onClick={() => add("computer")}>
+                  <Monitor size={16} /> Computer task
+                </button>
               </div>
               <div
                 ref={endRef}
@@ -1211,12 +1216,29 @@ function App() {
                     ? "API FLOW"
                     : current.kind === "instruction"
                       ? "TEXT STEP"
-                      : current.kind.toUpperCase()}
+                      : current.kind === "computer"
+                        ? "COMPUTER TASK"
+                        : current.kind.toUpperCase()}
                 </span>
                 <h2>Make it yours.</h2>
                 <p className="muted">
-                  Tell the AI what this step should accomplish.
+                  {current.kind === "computer"
+                    ? "Describe what to do in an app or browser. Computer use is set up automatically when available."
+                    : "Tell the AI what this step should accomplish."}
                 </p>
+                {current.kind === "computer" && (
+                  <div className="context-note">
+                    <Monitor size={17} />
+                    <span>
+                      Uses your current desktop
+                      <small>
+                        Keep the desktop unlocked. The automation pauses for
+                        required approvals and stops if computer control is
+                        unavailable.
+                      </small>
+                    </span>
+                  </div>
+                )}
                 <label>
                   Step name
                   <input

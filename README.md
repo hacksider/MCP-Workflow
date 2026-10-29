@@ -1,6 +1,6 @@
 # MCP Workflow
 
-Version **0.4.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.5.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
 
 MCP Workflow makes repeatable tasks easy to create using AI. Describe what you want in plain language, organize it into steps, and save an automation you can run again whenever needed. Start with a simple Text step, add skills or connected apps when useful, and describe API operations alongside their documentation. Codex chooses the underlying tools automatically. Every step finishes before the next one starts, carries its results forward, and shows progress and timing so you can see what the automation is doing.
 
@@ -13,6 +13,10 @@ Actual Windows Tauri application. Earlier screenshots show the original sidebar;
 ![AI automation executing a repeated Text step with an active glow and live elapsed time](docs/screenshots/automation-running.png)
 
 ![Completed automation replay with two successful runs, per-step durations, and average completion times](docs/screenshots/automation-completed.png)
+
+![Computer task instructions and the runtime's explicit permission blocker](docs/screenshots/computer-task.png)
+
+![Searchable ChatGPT/Codex plugin catalog with install controls](docs/screenshots/plugin-browser.png)
 
 ![Version 0.1.2 sidebar with Skills, Plugins, and Apps; tools are chosen automatically during execution](docs/screenshots/simplified-sidebar.png)
 
@@ -80,6 +84,14 @@ Before an automation starts, the AI checks the current catalog and selects only 
 Large catalogs are searchable in pages of up to 50 visible entries. The dependency planner receives a bounded shortlist of up to 60 relevant, installed, featured, or explicitly referenced candidates instead of sending the whole marketplace to the model.
 
 Latest means the version available to the account and configured marketplace/source, respecting pinned references and administrative policies. ChatGPT-only plugins not exposed through the Codex catalog cannot be installed by this app. Standalone locally authored skills are reloaded, not overwritten from unknown sources. Their owning plugin, when known, supplies package updates. Missing authentication, unavailable packages, and failed downloads stop the automation with an error rather than proceeding with a missing capability.
+
+## Computer tasks
+
+Add a **Computer task** and describe what to do in an app or browser. Dependency preparation automatically selects the account's `computer-use` plugin, installs it if needed, and supplies its enabled skill to Codex. Computer tasks support the same repetitions, completion gates, progress glow, and timing statistics as other steps. [examples/computer-task.json](examples/computer-task.json) provides a harmless Calculator example.
+
+Actual control requires a compatible local computer-use runtime, an interactive unlocked desktop, and any required host permissions. Plugin installation alone does not create that runtime or grant permissions. The AI follows the installed skill's screenshot and interaction rules and must verify visible results. It is instructed to return blocked when computer control is unavailable, rather than substituting shell commands or claiming success. Authentication screens and other protected actions remain subject to the runtime's interaction rules and user input requirements.
+
+The Computer task was checked through automatic dependency planning and skill binding in the Windows app. It reached the computer-use runtime, which rejected launching Calculator because that app was not approved for computer control. The step reported blocked, was not counted as successful, and did not claim a calculated result. No permission was bypassed. Actual Calculator interaction was not completed during verification. Computer capability tests cover required-package selection, skill binding, missing-runtime/skill blockers, and the verification instructions. The full frontend suite now has 25 passing tests; the Rust installer-policy test also passes.
 
 ## Connection scope and API execution
 

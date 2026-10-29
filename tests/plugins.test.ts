@@ -96,6 +96,17 @@ describe("needed plugin downloads", () => {
     });
     expect(rows.find((p) => p.id === "b@m")?.installed).toBe(false);
   });
+  it("prefers an installed CLI version over stale descriptive metadata after an update", () => {
+    const rows = pluginCatalog(
+      { installed: [{ ...cli.installed[0], version: "3" }] },
+      metadata,
+    );
+    expect(rows[0]).toMatchObject({
+      localVersion: "3",
+      version: "3",
+      needsUpdate: false,
+    });
+  });
   it("validates every AI-selected dependency before installing any", () => {
     const rows = pluginCatalog(cli, metadata);
     expect(
