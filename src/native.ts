@@ -1,20 +1,61 @@
 import { invoke } from "@tauri-apps/api/core";
-import { conditionResult, type Context } from "./routing";
+import { conditionResult, resolve, type Context } from "./routing";
 import type { Step, Workflow } from "./workflow";
-export const isNativeStep = (step: Step) => (step.kind === "api" && !!step.api) || ["condition", "loop"].includes(step.kind);
+export const isNativeStep = (step: Step) => (step.kind === "api" && !!step.api) || ["condition", "loop", "values", "fetch", "extract", "collect", "wait", "export"].includes(step.kind);
 export const needsAgent = (workflow: Workflow) =>
   workflow.steps.some((s) => !isNativeStep(s));
 export async function executeNativeStep(
   step: Step,
   context: Context,
+  cwd = "",
+  cancelled: () => boolean = () => false,
 ): Promise<{ status: "completed"; summary: string; outputs: string }> {
+  const done=(summary:string,outputs:unknown)=>({status:"completed" as const,summary,outputs:JSON.stringify(outputs)});
+  if(step.kind === "values") {
+    const values=JSON.parse(step.values ?? "{}");
+    if(!values || Array.isArray(values) || typeof values!=="object") throw Error("Values must be a JSON object");
+    const deep=(v:any):any=>typeof v==='string'?resolve(v,context):Array.isArray(v)?v.map(deep):v && typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,deep(x)])):v;
+    const result=deep(values);for(const [k,v] of Object.entries(result)){if(['__proto__','constructor','prototype'].includes(k))throw Error('Invalid variable name');context.vars[k]=v;}
+    return done("Updated workflow values",result);
+  }
+  if(step.kind === "fetch") {
+    if(!step.fetch || !Number.isInteger(step.fetch.maxPages) || step.fetch.maxPages<1 || step.fetch.maxPages>1000)throw Error('Fetch needs a page limit from 1 to 1000');
+    const count=(context.steps[step.id]?.outputs.pageNumber ?? 0)+1;
+    if(count>step.fetch.maxPages)throw Error('Fetch page limit reached; check pagination');
+    const url=String(resolve(step.fetch.url,context));
+    const result=await invoke<any>('fetch_page',{url});return done(`Fetched page ${count}: ${url}`,{...result,pageNumber:count});
+  }
+  if(step.kind === "extract") {
+    const c=step.extract;if(!c)throw Error('Configure extraction');
+    const page=resolve(c.source,context);if(!page || typeof page.html!=='string')throw Error('Extraction source must be a fetched page result');
+    const result=await invoke<any>('extract_rows',{html:page.html,baseUrl:page.url,rowSelector:c.rowSelector,fields:c.fields,nextSelector:c.nextSelector});
+    return done(`Extracted ${result.rows.length} rows`,result);
+  }
+  if(step.kind === "collect") {
+    const c=step.collect;if(!c)throw Error('Configure collection');
+    const rows=resolve(c.source,context);if(!Array.isArray(rows))throw Error('Collection source must be an array');
+    if(!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(c.dataset))throw Error('Use a simple dataset name');
+    const prior=context.datasets[c.dataset]??[];
+    const combined=[...prior];const seen=new Set(prior.map(r=>JSON.stringify(c.uniqueKey?r[c.uniqueKey]:r)));
+    for(const row of rows){if(!row || typeof row!=='object'||Array.isArray(row))throw Error('Collection rows must be objects');if(c.uniqueKey && (row[c.uniqueKey]===undefined||row[c.uniqueKey]===null||row[c.uniqueKey]===''))throw Error('Missing unique key in row');const key=JSON.stringify(c.uniqueKey?row[c.uniqueKey]:row);if(!seen.has(key)){seen.add(key);combined.push(row);}}
+    if(combined.length>100000||JSON.stringify(combined).length>20000000)throw Error('Dataset limit exceeded');
+    context.datasets[c.dataset]=combined;return done(`Collected ${combined.length-prior.length} new rows (${combined.length} total)`,{added:combined.length-prior.length,total:combined.length});
+  }
+  if(step.kind === "wait") {
+    const seconds=step.wait?.seconds;if(seconds===undefined||!Number.isFinite(seconds)||seconds<0||seconds>60)throw Error('Wait must be 0–60 seconds');
+    const until=Date.now()+seconds*1000;while(Date.now()<until){if(cancelled())throw Error('Stopped');await new Promise(r=>setTimeout(r,Math.min(100,until-Date.now())));}return done(`Waited ${seconds} seconds`,{seconds});
+  }
+  if(step.kind === "export") {
+    const c=step.export;if(!c)throw Error('Configure export');const rows=context.datasets[c.dataset];if(!rows?.length)throw Error('Dataset is empty');
+    const result=await invoke<any>('export_rows',{cwd,name:c.name,format:c.format,rows});return done(`Exported ${rows.length} rows to ${result.path}`,result);
+  }
   if (step.kind === "condition" || step.kind === "loop") return {status:"completed",summary:step.kind === "condition" ? `Condition: ${conditionResult(step.condition!,context)}` : `Loop gate (${step.loop!.times} iterations)`,outputs:JSON.stringify(step.kind === "condition" ? {matched:conditionResult(step.condition!,context)} : {times:step.loop!.times})};
   if (step.kind === "api" && step.api) {
     const data = await invoke<any>("http_request", {
-      url: step.endpoint,
+      url: String(resolve(step.endpoint,context)),
       method: step.api.method,
-      headers: JSON.parse(step.api.headers),
-      body: step.api.body,
+      headers: JSON.parse(String(resolve(step.api.headers,context))),
+      body: String(resolve(step.api.body,context)),
       authEnv: step.api.authEnv,
     });
     if (data.status < 200 || data.status >= 300)

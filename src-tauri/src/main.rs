@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod http;
 mod plugins;
+mod scraping;
 mod uploads;
 
 use serde_json::{json, Value};
@@ -209,6 +210,9 @@ fn main() {
             plugins::plugin_catalog,
             plugins::install_plugin,
             uploads::choose_uploads,
+            scraping::fetch_page,
+            scraping::extract_rows,
+            scraping::export_rows,
             http::http_request
         ])
         .run(tauri::generate_context!())

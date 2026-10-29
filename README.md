@@ -1,6 +1,6 @@
 # MCP Workflow
 
-Version **0.9.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.10.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
 
 MCP Workflow makes repeatable tasks easy to create using AI. Describe what you want in plain language, organize it into steps, and save an automation you can run again whenever needed. Start with a simple Text step, add skills or connected apps when useful, and describe API operations alongside their documentation. Codex chooses the underlying tools automatically. Every step finishes before the next one starts, carries its results forward, and shows progress and timing so you can see what the automation is doing.
 
@@ -136,3 +136,8 @@ Every completed change should update this README when the application's purpose,
 
 ### Conditions and loops
 Choose a true/false destination on a Condition. A Loop repeats its body a fixed number of times; set the last body step’s Next step back to that Loop, then choose its exit. Any step can route to an earlier step. References such as `{{steps.extract.outputs.nextUrl}}` read completed results. The workflow execution limit stops accidental infinite cycles. Each action finishes before routing.
+
+### Scraper demonstration
+Click **Scraper demo**, choose an existing workspace in Workflow settings, and Run. The bundled Amazon-style fictional pages demonstrate values → wait → fetch → extract → collect → condition → pagination loop → CSV/JSON export. Six source rows produce five unique products. No account or Amazon connection is needed. Exports receive unique filenames on every run.
+
+For live sites you are authorized to scrape, change the input URL and CSS selectors. Fetch checks robots.txt and stops on blocks, CAPTCHA indicators, redirects, missing required fields and page/execution limits. It fetches HTML without JavaScript rendering. Use Computer task for browser interactions when its runtime is available. The template is a basic educational demonstration of this source-available tool, not an Amazon integration or affiliation.

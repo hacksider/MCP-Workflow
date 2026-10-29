@@ -1103,3 +1103,6 @@ label small {
     font-size: 10px;
   }
 }
+
+.extract-field {border:1px solid var(--border, #dbe4de);border-radius:8px;padding:10px;margin:12px 0;}
+.routing-editor small,.scraper-editor small {overflow-wrap:anywhere;}

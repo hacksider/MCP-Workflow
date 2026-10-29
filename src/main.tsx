@@ -74,6 +74,8 @@ import {
   type Plugin,
 } from "./plugins";
 import { runGraph, newContext, validateRoutes } from "./routing";
+import { ScraperEditor } from "./ScraperEditor";
+import amazonDemo from "../examples/amazon-scraper-demo.json";
 import { RoutingEditor } from "./RoutingEditor";
 import { FormEditor, FormResult } from "./FormFlow";
 import { executeNativeStep, isNativeStep, needsAgent } from "./native";
@@ -90,6 +92,7 @@ const icons = {
   computer: Monitor,
   upload: Upload,
   form: FileText,
+  values: Braces, fetch: Globe, extract: Search, collect: Layers, wait: Circle, export: ArrowDownToLine,
   condition: GitBranch,
   loop: RefreshCw,
 };
@@ -602,7 +605,7 @@ function App() {
           try {
             let report: ReturnType<typeof parseOutcome>;
             if (isNativeStep(step)) {
-              report = await executeNativeStep(step, context);
+              report = await executeNativeStep(step, context, workflow.cwd, () => cancelled.current);
               if (cancelled.current)
                 throw new Error(
                   "Run stopped after the in-flight request finished.",
@@ -669,6 +672,7 @@ function App() {
                   "",
               );
             }
+            if (report.status !== "completed") throw new Error(`${report.summary}\n${report.outputs}`);
             const formValues =
               step.kind === "form"
                 ? validateFormValues(step.formFields ?? [], report.outputs)
@@ -832,7 +836,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.9.0</span>
+          <span className="version">0.10.0</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -982,6 +986,7 @@ function App() {
               />
             </div>
             <div className="heading-actions">
+              <button disabled={running} title="Load the Amazon-style scraper demonstration (replaces current flow)" onClick={()=>{setWorkflow(parseWorkflow(JSON.stringify({...amazonDemo,id:crypto.randomUUID(),cwd:workflow.cwd})));select(null);setRuns([]);setReachedEnd(false);setRunDuration(0);}}>Scraper demo</button>
               <button
                 className="icon-button"
                 title="Import workflow"
@@ -1158,6 +1163,7 @@ function App() {
                 <button disabled={running} onClick={() => add("form")}>
                   <FileText size={16} /> Form
                 </button>
+                {(["values","fetch","extract","collect","wait","export"] as Step["kind"][]).map(kind=><button key={kind} disabled={running} onClick={()=>add(kind)}><Plus size={16}/>{({values:"Set values",fetch:"Fetch page",extract:"Extract data",collect:"Collect rows",wait:"Wait",export:"Export file"} as Record<string,string>)[kind]}</button>)}
                 <button disabled={running} onClick={() => add("condition")}><GitBranch size={16} /> Condition</button>
                 <button disabled={running} onClick={() => add("loop")}><RefreshCw size={16} /> Loop</button>
                 <button disabled={running} onClick={() => add("computer")}>
@@ -1484,6 +1490,7 @@ function App() {
                     </label>
                   </>
                 )}
+                <ScraperEditor step={current} steps={workflow.steps} onChange={editStep} />
                 <RoutingEditor step={current} steps={workflow.steps} onChange={editStep} />
                 {current.kind === "form" && (
                   <FormEditor
