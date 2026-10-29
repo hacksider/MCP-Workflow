@@ -1,6 +1,6 @@
 # MCP Workflow
 
-Version **0.11.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.11.1**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
 
 MCP Workflow makes repeatable tasks easy to create using AI. Describe what you want in plain language, organize it into steps, and save an automation you can run again whenever needed. Start with a simple Text step, add skills or connected apps when useful, and describe API operations alongside their documentation. Codex chooses the underlying tools automatically. Every step finishes before the next one starts, carries its results forward, and shows progress and timing so you can see what the automation is doing.
 
@@ -148,3 +148,5 @@ Choose a provider in Workflow settings. ChatGPT uses Codex sign-in. Claude subsc
 Native scraper and CRUD steps need no AI account. Claude loads its own user/project skills, plugins and MCP configuration; the ChatGPT plugin catalog and automatic catalog downloads belong to Codex and are not interchangeable with Claude plugins. The adapters have mock-based tests. A live Claude test reached the runtime and stopped correctly on an expired OAuth token; reauthenticate with Claude Code to use it. Paid API/Bedrock inference was not exercised and requires your credentials and model access.
 
 Official integration references: [Claude plan usage](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan), [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/typescript), [Bedrock setup](https://code.claude.com/docs/en/amazon-bedrock), [Codex provider configuration](https://learn.chatgpt.com/docs/config-file/config-reference).
+
+Basic flow elements stay visible in the left sidebar. Skills, plugins and apps are available in its expandable section; tools are chosen behind the scenes. Set values and collected datasets are included as reference data for following AI steps.

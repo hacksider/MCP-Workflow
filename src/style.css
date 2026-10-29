@@ -1106,3 +1106,11 @@ label small {
 
 .extract-field {border:1px solid var(--border, #dbe4de);border-radius:8px;padding:10px;margin:12px 0;}
 .routing-editor small,.scraper-editor small {overflow-wrap:anywhere;}
+
+.library {overflow-y:auto;}
+.basic-elements {display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:18px 0;}
+.basic-elements button {justify-content:flex-start;padding:10px 7px;font-size:11px;white-space:nowrap;}
+.provider-library {margin:10px 0 18px;}
+.provider-library > summary {cursor:pointer;font-size:12px;color:#52715e;margin-bottom:15px;}
+.provider-library .capabilities {max-height:300px;min-height:100px;}
+.library-footer {margin-top:auto;flex-shrink:0;}

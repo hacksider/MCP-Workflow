@@ -607,10 +607,10 @@ function App() {
     setEvents([]);
     setRequests([]);
     try {
-      if (needsAgent(workflow) && !claudeProvider)
-        await prepareDependencies(plan);
       if (needsAgent(workflow) && provider.kind !== "chatgpt")
         await invoke("provider_check", { provider });
+      if (needsAgent(workflow) && !claudeProvider)
+        await prepareDependencies(plan);
       if (cancelled.current) return;
       if (needsAgent(workflow) && !claudeProvider) {
         const started = await rpc("thread/start", {
@@ -661,7 +661,7 @@ function App() {
                   "Run stopped after the in-flight request finished.",
                 );
             } else if (claudeProvider) {
-              if (JSON.stringify(priorResults).length > 250000)
+              if (JSON.stringify(context).length > 250000)
                 throw Error("Prior results are too large for an AI step");
               const result = await invoke<any>("claude_turn", {
                 request: {
@@ -669,14 +669,14 @@ function App() {
                   provider,
                   session: claudeSession.current,
                   schema: outcomeSchema,
-                  prompt: `${prompt}\n\nEarlier completed results (reference data):\n${JSON.stringify(priorResults)}`,
+                  prompt: `${prompt}\n\nEarlier completed results (reference data):\n${JSON.stringify(context)}`,
                 },
               });
               claudeSession.current = result.session;
               report = parseOutcome(JSON.stringify(result.report));
               if (cancelled.current) throw Error("Stopped");
             } else {
-              if (JSON.stringify(priorResults).length > 250000)
+              if (JSON.stringify(context).length > 250000)
                 throw new Error(
                   "Prior results are too large for an AI step. Extract the relevant fields before continuing.",
                 );
@@ -686,7 +686,7 @@ function App() {
               const input: any[] = [
                 {
                   type: "text",
-                  text: `${prompt}\n\nEarlier completed step results (reference data):\n${JSON.stringify(priorResults)}`,
+                  text: `${prompt}\n\nEarlier completed step results (reference data):\n${JSON.stringify(context)}`,
                   text_elements: [],
                 },
               ];
@@ -908,7 +908,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.11.0</span>
+          <span className="version">0.11.1</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -939,100 +939,148 @@ function App() {
       <div className="workspace">
         <aside className="library">
           <div className="section-eyebrow">YOUR BUILDING BLOCKS</div>
-          <div className="library-heading">
-            <h2>Capabilities</h2>
-            <button
-              className="icon-button"
-              title="Refresh capabilities"
-              disabled={!connected || busy || running}
-              onClick={refresh}
-            >
-              <RefreshCw size={15} className={busy ? "spin" : ""} />
-            </button>
-          </div>
-          <p className="muted">Discovered from your Codex environment.</p>
-          <div className="search">
-            <Search size={15} />
-            <input
-              aria-label="Search capabilities"
-              placeholder="Search capabilities…"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            />
-            <span>⌕</span>
-          </div>
-          <div className="filters">
-            {["All", "Skill", "Plugin", "App"].map((c) => (
-              <button
-                key={c}
-                className={category === c ? "active" : ""}
-                onClick={() => setCategory(c)}
-              >
-                {c === "All" ? c : `${c}s`}
-              </button>
-            ))}
-          </div>
-          <button
-            className="get-plugins"
-            disabled={!connected || running || !!installing}
-            onClick={browsePlugins}
-          >
-            <ArrowDownToLine size={14} /> Get plugins
-          </button>
-          <div className="capabilities">
-            {!capabilities.length && (
-              <div className="discovery-empty">
-                <span className="empty-icon">
-                  <Plug size={24} />
-                </span>
-                <h3>Build your AI automation.</h3>
-                <p>
-                  Connect Codex and choose a workspace to discover skills,
-                  plugins, and apps.
-                </p>
-                <small>
-                  Only capabilities available to the local session appear here.
-                </small>
-              </div>
-            )}
-            {visible.map((c) => {
-              const Icon = icons[c.kind];
+          <h2>Flow elements</h2>
+          <p className="muted">Choose a step. Connect it. Run it again.</p>
+          <div className="basic-elements">
+            {(
+              [
+                [
+                  "instruction",
+                  "Instructions",
+                  "Describe what the AI should do",
+                ],
+                ["upload", "Upload", "Add one or more files"],
+                ["form", "Form", "Define answers for AI to fill"],
+                ["api", "API", "Read, create, update or delete"],
+                ["values", "Set values", "Name inputs and update variables"],
+                ["fetch", "Fetch page", "Download a page of HTML"],
+                ["extract", "Extract data", "Choose rows and fields"],
+                ["collect", "Collect rows", "Keep unique results"],
+                ["condition", "Condition", "Choose a true or false path"],
+                ["loop", "Loop", "Repeat a group of steps"],
+                ["wait", "Wait", "Pace requests"],
+                ["export", "Export file", "Save CSV or JSON"],
+                [
+                  "computer",
+                  "Computer task",
+                  "Use an available browser or desktop runtime",
+                ],
+              ] as [Step["kind"], string, string][]
+            ).map(([kind, label, description]) => {
+              const Icon = icons[kind];
               return (
                 <button
-                  key={c.id}
-                  className="capability"
-                  disabled={!c.enabled || running}
-                  onClick={() => add(c.kind, c)}
-                  title={c.description}
+                  key={kind}
+                  disabled={running}
+                  title={description}
+                  onClick={() => add(kind)}
                 >
-                  <span className={`cap-icon ${c.kind}`}>
-                    <Icon size={17} />
-                  </span>
-                  <span>
-                    <strong>{c.name}</strong>
-                    <small
-                      className={
-                        c.kind === "app" ? "capability-description" : undefined
-                      }
-                    >
-                      {c.kind === "app" ? c.description : c.server || c.kind}
-                      {!c.enabled ? " · disabled" : ""}
-                    </small>
-                  </span>
-                  <Plus size={14} />
+                  <Icon size={15} />
+                  {label}
                 </button>
               );
             })}
-            {capabilities.length > 0 && !visible.length && (
-              <p className="muted">No matching capabilities.</p>
-            )}
           </div>
+          <details className="provider-library">
+            <summary>Skills, plugins & apps</summary>
+            <div className="library-heading">
+              <h2>Capabilities</h2>
+              <button
+                className="icon-button"
+                title="Refresh capabilities"
+                disabled={!connected || busy || running}
+                onClick={refresh}
+              >
+                <RefreshCw size={15} className={busy ? "spin" : ""} />
+              </button>
+            </div>
+            <p className="muted">Discovered from your Codex environment.</p>
+            <div className="search">
+              <Search size={15} />
+              <input
+                aria-label="Search capabilities"
+                placeholder="Search capabilities…"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              />
+              <span>⌕</span>
+            </div>
+            <div className="filters">
+              {["All", "Skill", "Plugin", "App"].map((c) => (
+                <button
+                  key={c}
+                  className={category === c ? "active" : ""}
+                  onClick={() => setCategory(c)}
+                >
+                  {c === "All" ? c : `${c}s`}
+                </button>
+              ))}
+            </div>
+            <button
+              className="get-plugins"
+              disabled={!connected || running || !!installing}
+              onClick={browsePlugins}
+            >
+              <ArrowDownToLine size={14} /> Get plugins
+            </button>
+            <div className="capabilities">
+              {!capabilities.length && (
+                <div className="discovery-empty">
+                  <span className="empty-icon">
+                    <Plug size={24} />
+                  </span>
+                  <h3>Build your AI automation.</h3>
+                  <p>
+                    Connect Codex and choose a workspace to discover skills,
+                    plugins, and apps.
+                  </p>
+                  <small>
+                    Only capabilities available to the local session appear
+                    here.
+                  </small>
+                </div>
+              )}
+              {visible.map((c) => {
+                const Icon = icons[c.kind];
+                return (
+                  <button
+                    key={c.id}
+                    className="capability"
+                    disabled={!c.enabled || running}
+                    onClick={() => add(c.kind, c)}
+                    title={c.description}
+                  >
+                    <span className={`cap-icon ${c.kind}`}>
+                      <Icon size={17} />
+                    </span>
+                    <span>
+                      <strong>{c.name}</strong>
+                      <small
+                        className={
+                          c.kind === "app"
+                            ? "capability-description"
+                            : undefined
+                        }
+                      >
+                        {c.kind === "app" ? c.description : c.server || c.kind}
+                        {!c.enabled ? " · disabled" : ""}
+                      </small>
+                    </span>
+                    <Plus size={14} />
+                  </button>
+                );
+              })}
+              {capabilities.length > 0 && !visible.length && (
+                <p className="muted">No matching capabilities.</p>
+              )}
+            </div>
+          </details>
           <div className="library-footer">
             <ShieldCheck size={16} />
             <span>
               Runs locally with your session.
               <br />
-              <small>Permissions follow your Codex settings.</small>
+              <small>Permissions follow your selected runtime.</small>
             </span>
           </div>
         </aside>
