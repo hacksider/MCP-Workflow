@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "name": "API workflow starter",
+  "description": "Describe an API operation and let Codex interpret its documentation.",
+  "cwd": "",
+  "instructions": "Only perform the requested operation. Report the response status and useful result fields. Ask when authentication or required parameters are missing.",
+  "steps": [
+    {
+      "id": "api-request",
+      "kind": "api",
+      "name": "API request (example)",
+      "instructions": "Replace this text with the operation you want, such as retrieving recent records and summarizing them in a table. Replace the example endpoint and documentation before running.",
+      "endpoint": "https://api.example.com/v1",
+      "documentation": "Example only. Replace with the official API documentation or its URL, request method and path, parameter descriptions, response examples, and authentication requirements. Reference credential names; never paste secrets."
+    }
+  ]
+}

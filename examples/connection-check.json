@@ -1,0 +1,25 @@
+{
+  "cwd": "",
+  "steps": [
+    {
+      "endpoint": "",
+      "documentation": "",
+      "kind": "instruction",
+      "id": "confirm-session",
+      "name": "Confirm the session",
+      "instructions": "Return GREENLEAF-42 as the output and explain that the ChatGPT-backed workflow session is responding."
+    },
+    {
+      "endpoint": "",
+      "documentation": "",
+      "kind": "instruction",
+      "id": "confirm-context",
+      "name": "Carry context forward",
+      "instructions": "Repeat the exact verification token from the previous step. Do not invent a replacement token. State that prior-step context is available."
+    }
+  ],
+  "description": "Verify the connection and carry context across two steps.",
+  "schemaVersion": 1,
+  "instructions": "Do not call tools, read files, or access the network. This workflow only verifies responses and conversation continuity.",
+  "name": "Session connection check"
+}
