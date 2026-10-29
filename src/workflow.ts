@@ -419,7 +419,7 @@ export function stepPrompt(
       `Add named fields and any choice options to Form step ${index + 1}.`,
     );
   if (step.kind === "api" && !step.endpoint.includes("{{")) {
-    if (step.api) {
+    if (step.api && !/^\s*{{[^{}]+}}\s*$/.test(step.api.headers)) {
       let headers;
       try {
         headers = JSON.parse(step.api.headers);

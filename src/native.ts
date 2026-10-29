@@ -162,11 +162,13 @@ export async function executeNativeStep(
       ),
     };
   if (step.kind === "api" && step.api) {
+    const headers = resolve(step.api.headers, context);
+    const body = resolve(step.api.body, context);
     const data = await invoke<any>("http_request", {
       url: String(resolve(step.endpoint, context)),
       method: step.api.method,
-      headers: JSON.parse(String(resolve(step.api.headers, context))),
-      body: String(resolve(step.api.body, context)),
+      headers: typeof headers === "string" ? JSON.parse(headers) : headers,
+      body: typeof body === "string" ? body : JSON.stringify(body),
       authEnv: step.api.authEnv,
     });
     if (data.status < 200 || data.status >= 300)

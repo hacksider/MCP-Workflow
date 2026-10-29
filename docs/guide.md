@@ -47,7 +47,7 @@ For a live site you are authorized to scrape, change the first URL, row selector
 
 Set values accepts a JSON object, for example `{"url":"https://example.com/catalog"}`. Read it with `{{vars.url}}`. A full reference preserves its JSON type; references embedded in text become strings. Missing references fail clearly. No expressions or JavaScript are evaluated.
 
-Completed step results use `{{steps.STEP_ID.outputs.field}}`. Each inspector shows its step ID. Extract and Collect offer source-step pickers. Native direct API URLs, headers and body also accept references. AI steps receive completed results, variables and collected datasets as reference data, capped at 250,000 characters.
+Completed step results use `{{steps.STEP_ID.outputs.field}}`. Each inspector shows its step ID. Extract and Collect offer source-step pickers. Native direct API URLs, headers and body also accept references. Use a whole reference such as `{{steps.form.outputs}}` as the body to send typed form data as JSON, or `{{vars.headers}}` for a string-valued header object. AI steps receive completed results, variables and collected datasets as reference data, capped at 250,000 characters.
 
 A **Condition** chooses its true/false destination. Choose an earlier step to form a pagination loop. A **Loop** runs a fixed number of iterations: choose its body and exit, then route the last body step back to the Loop. The gate runs once more to exit after its final iteration. Each step also has a Repeat count. Set **Maximum step executions** to bound the whole graph; a cap or error stops the run instead of silently skipping work.
 
@@ -75,7 +75,7 @@ Only a successful completed outcome allows routing onward. The agent must finish
 
 ![Cumulative step timing statistics](screenshots/scraper-timings.png)
 
-The active step glows. The console reports each visit's duration, total run time, total runs, successful runs and per-step average successful duration. Branches can execute more or fewer steps than the initial linear plan.
+The active step glows. Fast actions show milliseconds. The console reports each visit's duration, total run time, total runs, successful runs and per-step average successful duration. Branches can execute more or fewer steps than the initial linear plan.
 
 Stopping a native network request waits for the in-flight request (up to 30 seconds, plus bounded retries). Stopping cannot undo completed file writes, API writes or computer actions. CSV exports quote fields and prefix formula-like values for safer spreadsheet opening; JSON preserves the original values. Exports never overwrite existing files.
 

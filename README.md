@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.11.2** · Tauri + React + Rust · Windows installer
+Current version: **0.11.3** · Tauri + React + Rust · Windows installer
 
 ![The actual desktop scraper workflow](docs/screenshots/scraper-setup.png)
 

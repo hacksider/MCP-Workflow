@@ -908,7 +908,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.11.2</span>
+          <span className="version">0.11.3</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -1258,7 +1258,19 @@ function App() {
                               ? `True: ${workflow.steps.find((x) => x.id === s.condition?.yes)?.name ?? s.condition?.yes ?? "next"}; false: ${workflow.steps.find((x) => x.id === s.condition?.no)?.name ?? s.condition?.no ?? "next"}`
                               : s.kind === "loop"
                                 ? `Loop ${s.loop?.times ?? 1} times; body must return here`
-                                : "Configure this step")}
+                                : s.kind === "fetch"
+                                  ? `${s.fetch?.url ?? ""} (limit ${s.fetch?.maxPages ?? 1} pages)`
+                                  : s.kind === "extract"
+                                    ? `${s.extract?.rowSelector ?? ""} → ${s.extract?.fields.map((f) => f.name).join(", ") ?? ""}`
+                                    : s.kind === "collect"
+                                      ? `${s.collect?.dataset ?? ""} · unique ${s.collect?.uniqueKey || "rows"}`
+                                      : s.kind === "export"
+                                        ? `${s.export?.dataset ?? ""} → ${s.export?.format.toUpperCase() ?? ""}`
+                                        : s.kind === "wait"
+                                          ? `Pause ${s.wait?.seconds ?? 0} seconds`
+                                          : s.kind === "values"
+                                            ? (s.values ?? "Set named inputs")
+                                            : "Configure this step")}
                           {s.next &&
                             ` | Next: ${workflow.steps.find((x) => x.id === s.next)?.name ?? s.next}`}
                         </span>
@@ -1432,7 +1444,7 @@ function App() {
                         />
                       </>
                     ) : (
-                      <pre>{r.output || "Waiting for Codex…"}</pre>
+                      <pre>{r.output || "Working…"}</pre>
                     )}
                   </details>
                 ))}
@@ -1494,7 +1506,9 @@ function App() {
                 <p className="muted">
                   {current.kind === "computer"
                     ? "Describe what to do in an app or browser. Computer use is set up automatically when available."
-                    : "Tell the AI what this step should accomplish."}
+                    : isNativeStep(current)
+                      ? "Configure this action. Its results are passed to the next step."
+                      : "Tell the AI what this step should accomplish."}
                 </p>
                 {current.kind === "computer" && (
                   <div className="context-note">
@@ -1708,19 +1722,29 @@ function App() {
                   </small>
                 </label>
                 <label>
-                  {current.kind === "instruction"
-                    ? "What should the AI do?"
-                    : current.kind === "api" && current.api
-                      ? "Request notes (optional; direct calls use the configured fields)"
-                      : current.kind === "upload"
-                        ? "How should the files be used? (optional)"
-                        : "Instructions"}
+                  {isNativeStep(current)
+                    ? "Notes (optional; this action uses the configured fields)"
+                    : current.kind === "instruction"
+                      ? "What should the AI do?"
+                      : current.kind === "api" && current.api
+                        ? "Request notes (optional; direct calls use the configured fields)"
+                        : current.kind === "upload"
+                          ? "How should the files be used? (optional)"
+                          : "Instructions"}
                   <textarea
-                    rows={current.kind === "api" ? 6 : 12}
+                    rows={
+                      isNativeStep(current)
+                        ? 3
+                        : current.kind === "api"
+                          ? 6
+                          : 12
+                    }
                     placeholder={
-                      current.kind === "api"
-                        ? "Describe the operation in plain language…"
-                        : "What should the AI do? Include context, constraints, and the output you want…"
+                      isNativeStep(current)
+                        ? "Optional notes for people editing this workflow"
+                        : current.kind === "api"
+                          ? "Describe the operation in plain language…"
+                          : "What should the AI do? Include context, constraints, and the output you want…"
                     }
                     value={current.instructions}
                     onChange={(e) => editStep({ instructions: e.target.value })}

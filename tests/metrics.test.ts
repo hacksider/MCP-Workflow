@@ -30,6 +30,8 @@ describe("run timing statistics", () => {
   });
   it("shows unbounded minutes and clamps negative timing values", () => {
     expect(formatDuration(3723000)).toBe("62:03");
+    expect(formatDuration(8.4)).toBe("8 ms");
+    expect(formatDuration(0.3)).toBe("<1 ms");
     expect(formatDuration(-1)).toBe("00:00");
   });
 });

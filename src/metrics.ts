@@ -40,6 +40,7 @@ export function finishMetrics(
   return next;
 }
 export function formatDuration(ms: number): string {
+  if (ms > 0 && ms < 1000) return ms < 1 ? "<1 ms" : `${Math.round(ms)} ms`;
   const total = Math.floor(Math.max(0, ms) / 1000);
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
