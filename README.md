@@ -1,6 +1,6 @@
 # MCP Workflow
 
-Version **0.1.2**. A Tauri 2 desktop workflow studio using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.2.0**. A Tauri 2 desktop workflow studio using React, TypeScript, and a Rust bridge to local Codex app-server.
 
 Build repeatable AI workflows from the skills, plugins, and apps your local Codex session can access. Add open-ended instructions to each step, carry context through the flow, and describe API operations in plain language alongside their documentation. Codex automatically chooses the underlying tools needed to execute your instructions. The purpose is to make these capabilities usable as an ordered, inspectable process with visible results and approvals.
 
@@ -45,10 +45,17 @@ For an API flow, import [examples/api-starter.json](examples/api-starter.json) a
 
 - Search automatically discovered skills, installed plugins, and accessible apps in the sidebar; click a capability to add a step. Disabled capabilities cannot be added. Individual tools are kept out of the editor: Codex chooses and uses available tools automatically while running your instructions, skills, apps, and API flows. Existing workflow files with explicit tool steps remain compatible.
 - The Apps tab lists connected services by name with a short description. Hover an entry for its full description; click it to add an app step. Version 0.1.1 fixes an icon style collision that previously hid app names and distorted app steps.
-- Add instruction steps with freeform text, or API flows with an HTTP(S) website/endpoint, documentation or documentation URLs, and plain-language instructions.
+- Add a **Text step**, type what you want the AI to do, and run it without choosing any capability. Existing instruction steps remain compatible. API flows accept an HTTP(S) website/endpoint, documentation or documentation URLs, and plain-language instructions.
+- Every kind of step has a **Repeat count** from 1 to 100 (default 1). A step completes all repetitions before the next step starts. Each repetition has its own result, and outputs remain available to later repetitions and steps. A repeat executes the action again; external writes are not automatically idempotent.
 - Set shared workflow instructions and an optional model in workflow settings. Steps run sequentially in one Codex thread, carrying earlier outputs forward. Reorder or delete steps from their details panel.
 - Run the workflow to stream results. Optional execution details are collapsed by default. Automatic tool selection still respects Codex permissions: command and file approvals are shown for explicit approval. User-input requests are supported; unsupported requests can be declined. Additional permission requests are conservatively declined by this version. Stop interrupts the active turn and prevents subsequent steps.
 - Definitions save automatically to local webview storage. Export/import JSON for backups and sharing. Import replaces the current definition; export first if you want to keep it. Do not include secrets: definitions and exported JSON are plaintext.
+
+## Repeatability and completion
+
+Use **Run again** to replay a saved workflow from the beginning. Each run uses a new Codex thread and a snapshot of the definition, so previous conversation state and edits during execution cannot change the active sequence. The same instructions can produce different AI responses or external results; repeatability does not imply deterministic output. Older definitions without repeat counts run once per step.
+
+Only one execution can start at a time. The executor awaits each repetition's turn completion, validates its structured successful outcome, and checks protocol-reported agent and tool work before advancing. The AI is instructed to wait for delegated agents and background operations and collect their results before declaring completion. If reported work is still running, interrupted, or unsuccessful, the workflow stops rather than launching the next step. These checks cover work visible through the Codex protocol; arbitrary external background processes cannot be independently verified. Failed, blocked, malformed, or interrupted outcomes stop the sequence, and Stop prevents further repetitions or steps.
 
 ## Connection scope and API execution
 

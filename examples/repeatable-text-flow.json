@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "name": "Repeatable text flow",
+  "description": "Run a text step twice, then use its results in the next step.",
+  "cwd": "",
+  "instructions": "Do not use tools or access files. Complete each repetition before proceeding. Only respond to the text instructions.",
+  "steps": [
+    {
+      "id": "draft",
+      "kind": "instruction",
+      "name": "Write a short draft",
+      "instructions": "Write one short sentence about a useful benefit of reusable workflows. Include the token FLOW-READY in the output.",
+      "repeat": 2,
+      "endpoint": "",
+      "documentation": ""
+    },
+    {
+      "id": "summarize",
+      "kind": "instruction",
+      "name": "Summarize the drafts",
+      "instructions": "Summarize the two completed drafts in one sentence. Repeat the exact verification token from the drafts to confirm that prior results are available.",
+      "repeat": 1,
+      "endpoint": "",
+      "documentation": ""
+    }
+  ]
+}
