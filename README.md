@@ -1,6 +1,6 @@
 # MCP Workflow
 
-Version **0.7.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.8.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
 
 MCP Workflow makes repeatable tasks easy to create using AI. Describe what you want in plain language, organize it into steps, and save an automation you can run again whenever needed. Start with a simple Text step, add skills or connected apps when useful, and describe API operations alongside their documentation. Codex chooses the underlying tools automatically. Every step finishes before the next one starts, carries its results forward, and shows progress and timing so you can see what the automation is doing.
 
@@ -102,6 +102,8 @@ Actual control requires a compatible local computer-use runtime, an interactive 
 The Computer task was checked through automatic dependency planning and skill binding in the Windows app. It reached the computer-use runtime, which rejected launching Calculator because that app was not approved for computer control. The step reported blocked, was not counted as successful, and did not claim a calculated result. No permission was bypassed. Actual Calculator interaction was not completed during verification. Computer capability tests cover required-package selection, skill binding, missing-runtime/skill blockers, and the verification instructions. The full frontend suite now has 25 passing tests; the Rust installer-policy test also passes.
 
 ## Connection scope and API execution
+
+API steps now offer **Direct HTTP request (CRUD)** with Read/GET, Create/POST, Replace/PUT, Update/PATCH, and Delete/DELETE. Set the URL, optional headers and body, and an optional bearer-token environment variable. Header values such as `env:MY_API_KEY` are resolved only in the native backend. Direct calls use the configured fields, not natural-language notes, and can run without an AI connection. The legacy **AI interprets documentation** mode is retained for instruction-driven integrations. Responses feed subsequent steps as structured data. Requests time out after 30 seconds, responses are limited to 2 MB, redirects are not automatically followed, and non-success status codes stop the flow. Request notes do not trigger additional calls.
 
 The integration uses [Codex app-server](https://learn.chatgpt.com/docs/app-server), not a connection back into this development chat. Discovery reflects the local Codex process, workspace, account, configuration, and enabled plugins. ChatGPT-only connectors and plugins are not automatically transferable. Configure the corresponding MCP server or Codex plugin separately when missing. Discovery reports partial errors rather than inventing capabilities.
 

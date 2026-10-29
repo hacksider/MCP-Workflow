@@ -56,6 +56,7 @@ describe("workflow persistence and execution boundaries", () => {
     ])
       expect(prompt).toContain(text);
     s.instructions = "";
+    s.api = undefined; // Legacy AI-driven API steps still need a prompt.
     expect(() => stepPrompt(w, s, 0)).toThrow();
   });
   it("deduplicates skills and excludes uninstalled plugins and inaccessible apps", () => {

@@ -20,6 +20,12 @@ export type Step = {
   capability?: Capability;
   files?: { name: string; path: string; size: number }[];
   formFields?: FormField[];
+  api?: {
+    method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+    headers: string;
+    body: string;
+    authEnv: string;
+  };
 };
 export type FormField = {
   id: string;
@@ -83,6 +89,10 @@ export const newStep = (kind: Step["kind"], capability?: Capability): Step => ({
   endpoint: "",
   documentation: "",
   repeat: 1,
+  api:
+    kind === "api"
+      ? { method: "GET", headers: "{}", body: "", authEnv: "" }
+      : undefined,
   formFields:
     kind === "form"
       ? [{ id: "name", label: "Name", type: "text", required: true }]
@@ -133,6 +143,15 @@ export function parseWorkflow(text: string): Workflow {
     )
       throw new Error("Invalid or duplicate workflow step.");
     ids.add(s.id);
+    if (
+      s.api !== undefined &&
+      (!s.api ||
+        !["GET", "POST", "PUT", "PATCH", "DELETE"].includes(s.api.method) ||
+        !["headers", "body", "authEnv"].every(
+          (k) => typeof s.api[k] === "string",
+        ))
+    )
+      throw new Error("Invalid API request configuration.");
     if (s.formFields !== undefined) {
       if (!Array.isArray(s.formFields) || s.formFields.length > 100)
         throw new Error("Invalid form fields.");
@@ -196,7 +215,11 @@ export function stepPrompt(
   step: Step,
   index: number,
 ): string {
-  if (!step.instructions.trim() && !["upload", "form"].includes(step.kind))
+  if (
+    !step.instructions.trim() &&
+    !["upload", "form"].includes(step.kind) &&
+    !step.api
+  )
     throw new Error(`Add instructions to step ${index + 1}.`);
   if (step.kind === "upload" && !step.files?.length)
     throw new Error(`Choose files for Upload step ${index + 1}.`);
@@ -211,6 +234,21 @@ export function stepPrompt(
       `Add named fields and any choice options to Form step ${index + 1}.`,
     );
   if (step.kind === "api") {
+    if (step.api) {
+      let headers;
+      try {
+        headers = JSON.parse(step.api.headers);
+      } catch {
+        throw new Error(`API step ${index + 1} needs valid JSON headers.`);
+      }
+      if (
+        !headers ||
+        Array.isArray(headers) ||
+        typeof headers !== "object" ||
+        Object.values(headers).some((v) => typeof v !== "string")
+      )
+        throw new Error("API headers must be string-valued JSON.");
+    }
     let url: URL;
     try {
       url = new URL(step.endpoint);

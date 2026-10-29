@@ -1,4 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+mod http;
 mod plugins;
 mod uploads;
 
@@ -207,7 +208,8 @@ fn main() {
             respond,
             plugins::plugin_catalog,
             plugins::install_plugin,
-            uploads::choose_uploads
+            uploads::choose_uploads,
+            http::http_request
         ])
         .run(tauri::generate_context!())
         .expect("Failed to run MCP Workflow");
