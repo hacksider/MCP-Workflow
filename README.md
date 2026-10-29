@@ -1,6 +1,6 @@
 # MCP Workflow
 
-Version **0.5.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.6.0**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
 
 MCP Workflow makes repeatable tasks easy to create using AI. Describe what you want in plain language, organize it into steps, and save an automation you can run again whenever needed. Start with a simple Text step, add skills or connected apps when useful, and describe API operations alongside their documentation. Codex chooses the underlying tools automatically. Every step finishes before the next one starts, carries its results forward, and shows progress and timing so you can see what the automation is doing.
 
@@ -84,6 +84,10 @@ Before an automation starts, the AI checks the current catalog and selects only 
 Large catalogs are searchable in pages of up to 50 visible entries. The dependency planner receives a bounded shortlist of up to 60 relevant, installed, featured, or explicitly referenced candidates instead of sending the whole marketplace to the model.
 
 Latest means the version available to the account and configured marketplace/source, respecting pinned references and administrative policies. ChatGPT-only plugins not exposed through the Codex catalog cannot be installed by this app. Standalone locally authored skills are reloaded, not overwritten from unknown sources. Their owning plugin, when known, supplies package updates. Missing authentication, unavailable packages, and failed downloads stop the automation with an error rather than proceeding with a missing capability.
+
+## Instructions and uploads
+
+Choose **Instructions** to give the AI a plain-language task. Existing Text steps are compatible. Choose **Upload** to select a single file or multiple files using the desktop file picker. Set the workspace first. The app copies up to 100 selected files per selection (50 MB per file) into a unique `.mcp-workflow/uploads-*` folder inside that workspace, preserving them for repeat runs. Removing a reference from a step does not delete the retained file. Exported workflow JSON contains file references, not their contents; reselect files when moving the workflow to another machine. Uploaded content is treated as reference data, and unreadable or unsupported formats must be reported as blockers. The AI can read the files and pass findings to subsequent steps.
 
 ## Computer tasks
 

@@ -73,7 +73,7 @@ export function shortlistPlugins(
   );
   const words = [
     ...new Set(
-      `${goal} ${plan.map((p) => `${p.step.name} ${p.step.instructions} ${p.step.endpoint}`).join(" ")}`
+      `${goal} ${plan.map((p) => `${p.step.name} ${p.step.instructions} ${p.step.endpoint} ${p.step.files?.map((f) => f.name).join(" ") ?? ""}`).join(" ")}`
         .toLowerCase()
         .split(/[^a-z0-9]+/)
         .filter((word) => word.length > 2 && !ignored.has(word)),

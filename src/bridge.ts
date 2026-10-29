@@ -13,6 +13,10 @@ export async function rpc<T = any>(
   return invoke<T>("rpc", { method, params });
 }
 export const connect = () => invoke<any>("connect");
+export const chooseUploads = (cwd: string) =>
+  invoke<{ name: string; path: string; size: number }[]>("choose_uploads", {
+    cwd,
+  });
 export const listPlugins = () => invoke<any>("plugin_catalog");
 export const installPlugin = (pluginId: string, force = true) =>
   invoke<any>("install_plugin", { pluginId, force });

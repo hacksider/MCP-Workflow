@@ -33,6 +33,7 @@ import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   connect,
+  chooseUploads,
   listPlugins,
   installPlugin,
   desktop,
@@ -83,6 +84,7 @@ const icons = {
   tool: Braces,
   app: Layers,
   computer: Monitor,
+  upload: Upload,
 };
 type StepState = "running" | "completed" | "failed" | "interrupted";
 type Run = {
@@ -351,6 +353,15 @@ function App() {
       setError(String(e));
     }
   }
+  async function addFiles() {
+    if (!current) return;
+    try {
+      const files = await chooseUploads(workflow.cwd);
+      editStep({ files: [...(current.files ?? []), ...files] });
+    } catch (e) {
+      setError(String(e));
+    }
+  }
   async function loadPlugins() {
     // CLI and app-server share the plugin cache; finish the CLI refresh first.
     const cli = await listPlugins();
@@ -448,6 +459,7 @@ function App() {
               sharedInstructions: workflow.instructions,
               steps: plan.map((p) => ({
                 name: p.step.name,
+                  files: p.step.files?.map(f=>f.name),
                 instructions: p.step.instructions,
                 kind: p.step.kind,
               })),
@@ -773,7 +785,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.5.0</span>
+          <span className="version">0.6.0</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -1035,7 +1047,7 @@ function App() {
                             {s.kind === "api"
                               ? "API flow"
                               : s.kind === "instruction"
-                                ? "Text"
+                                ? "Instructions"
                                 : s.kind}
                             {(s.repeat ?? 1) > 1 ? ` · ×${s.repeat}` : ""}
                           </span>
@@ -1079,16 +1091,19 @@ function App() {
                   <p>
                     Turn a repeatable task into an AI automation.
                     <br />
-                    Start with a Text step and describe what to do.
+                    Start with Instructions and describe what to do.
                   </p>
                 </div>
               )}
               <div className="add-step">
                 <button disabled={running} onClick={() => add("instruction")}>
-                  <Plus size={16} /> Text step
+                  <Plus size={16} /> Instructions
                 </button>
                 <button disabled={running} onClick={() => add("api")}>
                   <Globe size={16} /> API flow
+                </button>
+                <button disabled={running} onClick={() => add("upload")}>
+                  <Upload size={16} /> Upload
                 </button>
                 <button disabled={running} onClick={() => add("computer")}>
                   <Monitor size={16} /> Computer task
@@ -1215,7 +1230,7 @@ function App() {
                   {current.kind === "api"
                     ? "API FLOW"
                     : current.kind === "instruction"
-                      ? "TEXT STEP"
+                      ? "INSTRUCTIONS"
                       : current.kind === "computer"
                         ? "COMPUTER TASK"
                         : current.kind.toUpperCase()}
@@ -1246,6 +1261,37 @@ function App() {
                     onChange={(e) => editStep({ name: e.target.value })}
                   />
                 </label>
+                {current.kind === "upload" && (
+                  <div className="upload-editor">
+                    <button disabled={!desktop} onClick={addFiles}>
+                      <Upload size={15} /> Choose one or more files
+                    </button>
+                    <p className="muted">
+                      Files are copied into your workspace for reuse. Up to 100
+                      files per selection, 50 MB each.
+                    </p>
+                    {current.files?.map((file, i) => (
+                      <div className="file-row" key={`${file.path}-${i}`}>
+                        <FileText size={16} />
+                        <span>
+                          {file.name}
+                          <small>{(file.size / 1024).toFixed(1)} KB</small>
+                        </span>
+                        <button
+                          className="icon-button"
+                          title={`Remove ${file.name} from step`}
+                          onClick={() =>
+                            editStep({
+                              files: current.files?.filter((_, n) => n !== i),
+                            })
+                          }
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {current.kind === "api" && (
                   <>
                     <label>
@@ -1290,7 +1336,9 @@ function App() {
                 <label>
                   {current.kind === "instruction"
                     ? "What should the AI do?"
-                    : "Instructions"}
+                    : current.kind === "upload"
+                      ? "How should the files be used? (optional)"
+                      : "Instructions"}
                   <textarea
                     rows={current.kind === "api" ? 6 : 12}
                     placeholder={

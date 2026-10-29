@@ -95,7 +95,10 @@ mod tests {
     fn live_catalog_cli() {
         let catalog = tauri::async_runtime::block_on(plugin_catalog()).expect("catalog");
         assert!(catalog["available"].is_array());
-        println!("Available entries: {}",catalog["available"].as_array().unwrap().len());
+        println!(
+            "Available entries: {}",
+            catalog["available"].as_array().unwrap().len()
+        );
     }
     #[test]
     fn only_catalog_plugins_with_install_permission_are_selected() {

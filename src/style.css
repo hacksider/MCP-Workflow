@@ -727,9 +727,35 @@ main {
 }
 .add-step {
   display: flex;
+  flex-wrap: wrap;
   gap: 9px;
   justify-content: center;
   padding: 4px 0;
+}
+.upload-editor {
+  margin-top: 18px;
+}
+.upload-editor .muted {
+  font-size: 10px;
+  margin: 10px 0;
+}
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 0;
+  border-bottom: 1px solid #edf0ee;
+  font-size: 11px;
+}
+.file-row > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.file-row small {
+  display: block;
+  margin-top: 4px;
+  font-size: 9px;
 }
 .add-step button {
   font-size: 11px;
