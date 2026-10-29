@@ -1,6 +1,6 @@
 # MCP Workflow
 
-Version **0.1.0**. A Tauri 2 desktop workflow studio using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.1.1**. A Tauri 2 desktop workflow studio using React, TypeScript, and a Rust bridge to local Codex app-server.
 
 Build repeatable AI workflows from the skills, plugins, apps, and MCP tools your local Codex session can access. Add open-ended instructions to each step, carry context through the flow, and describe API operations in plain language alongside their documentation. The purpose is to make these capabilities usable as an ordered, inspectable process with visible results and approvals.
 
@@ -13,6 +13,8 @@ Actual Windows Tauri application, captured during verification:
 ![Connected ChatGPT session with discovered capabilities and a completed two-step workflow](docs/screenshots/completed-workflow.png)
 
 ![API flow editor with a clearly labeled example endpoint and documentation](docs/screenshots/api-flow.png)
+
+![Apps sidebar showing readable names and descriptions](docs/screenshots/apps-sidebar.png)
 
 ## License
 
@@ -40,6 +42,7 @@ For an API flow, import [examples/api-starter.json](examples/api-starter.json) a
 ## Build a workflow
 
 - Search automatically discovered skills, installed plugins, accessible apps, and configured MCP tools in the sidebar; click a capability to add a step. Disabled capabilities cannot be added.
+- The Apps tab lists connected services by name with a short description. Hover an entry for its full description; click it to add an app step. Version 0.1.1 fixes an icon style collision that previously hid app names and distorted app steps.
 - Add instruction steps with freeform text, or API flows with an HTTP(S) website/endpoint, documentation or documentation URLs, and plain-language instructions.
 - Set shared workflow instructions and an optional model in workflow settings. Steps run sequentially in one Codex thread, carrying earlier outputs forward. Reorder or delete steps from their details panel.
 - Run the workflow to stream results and tool activity. Command and file approvals are shown for explicit approval. User-input requests are supported; unsupported requests can be declined. Additional permission requests are conservatively declined by this version. Stop interrupts the active turn and prevents subsequent steps.

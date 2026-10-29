@@ -475,14 +475,14 @@ function App() {
   );
   const request = requests[0];
   return (
-    <div className="app">
+    <div className="workflow-app">
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.1.0</span>
+          <span className="version">0.1.1</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -575,8 +575,12 @@ function App() {
                   </span>
                   <span>
                     <strong>{c.name}</strong>
-                    <small>
-                      {c.server || c.kind}
+                    <small
+                      className={
+                        c.kind === "app" ? "capability-description" : undefined
+                      }
+                    >
+                      {c.kind === "app" ? c.description : c.server || c.kind}
                       {!c.enabled ? " · disabled" : ""}
                     </small>
                   </span>

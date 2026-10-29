@@ -80,7 +80,7 @@ h2 {
   font-size: 12px;
   line-height: 1.7;
 }
-.app {
+.workflow-app {
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -286,6 +286,18 @@ h2 {
   color: #5a958d;
   background: #edf6f4;
   border-color: #dcebe7;
+}
+.cap-icon.app,
+.step-icon.app {
+  color: #638c77;
+  background: #edf5ef;
+  border-color: #dbe8de;
+}
+.capability small.capability-description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: none;
 }
 .library-footer {
   border-top: 1px solid #edf0ee;
