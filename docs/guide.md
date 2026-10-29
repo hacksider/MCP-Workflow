@@ -26,7 +26,7 @@ A useful document flow is **Upload → Instructions → Form**. Add an API step 
 
 Click **Scraper demo** in the workflow header. This adds a separate workflow to your library and keeps your existing flows. Choose a workspace and run it.
 
-![Scraper setup](screenshots/scraper-setup.png)
+![Fetched page beside the workflow and actual live CSV](screenshots/scraper-live-view.png)
 
 The [Amazon-style template](../examples/amazon-scraper-demo.json) uses two bundled HTML pages with fictional products. It makes no Amazon requests and is not affiliated with Amazon. It demonstrates this source-available tool; its noncommercial license is not an OSI open-source license.
 
@@ -44,7 +44,7 @@ The [Amazon-style template](../examples/amazon-scraper-demo.json) uses two bundl
 
 Two pages contain six rows, including one duplicate. A successful run exports five products and executes 16 step visits. A second run starts fresh and creates new files. [Example CSV](demo/products.csv) · [Example JSON](demo/products.json).
 
-[![Watch the actual desktop demonstration](screenshots/scraper-completed.png)](demo/amazon-scraper-demo.mp4)
+[![Watch the actual desktop demonstration](screenshots/scraper-csv-result.png)](demo/amazon-scraper-demo.mp4)
 
 For a live site you are authorized to scrape, change the first URL, row selector, field selectors and next-link selector. Inspect that site's actual HTML; the demonstration selectors are not a promise of compatibility with live Amazon pages. Fetch checks robots.txt, accepts HTTP(S) without embedded credentials, limits each response to 2 MB and 30 seconds, and retries transient HTTP failures up to twice. It stops on denied robots rules, access errors, CAPTCHA indicators and redirects. Supply the final permitted URL directly. It does not bypass logins or render JavaScript. A **Computer task** can use a compatible browser runtime when available.
 
@@ -82,7 +82,7 @@ Completed step results use `{{steps.STEP_ID.outputs.field}}`. Each inspector sho
 
 A **Condition** chooses its true/false destination. Choose an earlier step to form a pagination loop. A **Loop** runs a fixed number of iterations: choose its body and exit, then route the last body step back to the Loop. The gate runs once more to exit after its final iteration. Each step also has a Repeat count. Set **Maximum step executions** to bound the whole graph; a cap or error stops the run instead of silently skipping work.
 
-![Branch destinations](screenshots/scraper-condition.png)
+![Reconnectable branch and loop destinations](screenshots/graph-editor.png)
 
 ## Providers and dependencies
 
@@ -102,9 +102,9 @@ References: [Claude plan usage](https://support.claude.com/en/articles/15036540-
 
 ## Run behavior and verification
 
-Only a successful completed outcome allows routing onward. The agent must finish its tools and delegated work; unfinished work, denied/missing requirements or invalid required form answers stop execution. ![Active step during a real run](screenshots/scraper-running.png)
+Only a successful completed outcome allows routing onward. The agent must finish its tools and delegated work; unfinished work, denied/missing requirements or invalid required form answers stop execution. ![Countdown and counter during a real run](screenshots/timer-counter.png)
 
-![Cumulative step timing statistics](screenshots/scraper-timings.png)
+![Completed counter run with counts and timings](screenshots/counter-completed.png)
 
 The active step glows. Fast actions show milliseconds. The console reports each visit's duration, total run time, total runs, successful runs and per-step average successful duration. Branches can execute more or fewer steps than the initial linear plan.
 

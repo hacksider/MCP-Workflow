@@ -4,9 +4,9 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.15.0** · Tauri + React + Rust · Windows installer
+Current version: **0.15.1** · Tauri + React + Rust · Windows installer
 
-![Visual graph with Beginning, End, conditions, loops and recovery](docs/screenshots/graph-editor.png)
+![Workflow beside the fetched page and a CSV filling in real time](docs/screenshots/scraper-live-view.png)
 
 ## Try the scraper demo
 
@@ -16,7 +16,7 @@ Current version: **0.15.0** · Tauri + React + Rust · Windows installer
 
 The Amazon-style example uses **fictional bundled pages**. It fetches two pages, extracts products, follows pagination, removes duplicates and saves **five products** as CSV and JSON. No account or live Amazon access is required. This is a basic demonstration of how the tool works, not an Amazon integration.
 
-[![Watch the desktop demo](docs/screenshots/scraper-completed.png)](docs/demo/amazon-scraper-demo.mp4)
+[![Watch the desktop demo](docs/screenshots/scraper-csv-result.png)](docs/demo/amazon-scraper-demo.mp4)
 
 **[Watch the video](docs/demo/amazon-scraper-demo.mp4)** · [Template JSON](examples/amazon-scraper-demo.json) · [Example output](docs/demo/products.json)
 
@@ -40,7 +40,7 @@ Click **Loops demo** for a working [conditions, loops and recovery example](exam
 
 **Delay timer** waits before the next step and shows its remaining time in the graph and console. Choose seconds, minutes, hours or days. **Counter** increments on each completed visit and takes either its Below limit or Limit reached path. Counts reset for every run.
 
-Try [Delay and count three repetitions](examples/counter-and-delay.json): Beginning → Delay → Counter → back to Delay until count 3 → End. The scraper demo also counts fetched pages.
+Try [Delay and count three repetitions](examples/counter-and-delay.json): Beginning → Delay → Counter → back to Delay until count 3 → End. The scraper demo also counts fetched pages. [Watch countdowns and counter branching](docs/demo/counter-timer-demo.mp4).
 
 ## Build your own flow
 
