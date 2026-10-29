@@ -1,12 +1,18 @@
 # MCP Workflow
 
-Version **0.3.0**. A Tauri 2 desktop workflow studio using React, TypeScript, and a Rust bridge to local Codex app-server.
+Version **0.3.1**. A Tauri 2 desktop AI automation app using React, TypeScript, and a Rust bridge to local Codex app-server.
 
-Build repeatable AI workflows from the skills, plugins, and apps your local Codex session can access. Add open-ended instructions to each step, carry context through the flow, and describe API operations in plain language alongside their documentation. Codex automatically chooses the underlying tools needed to execute your instructions. The purpose is to make these capabilities usable as an ordered, inspectable process with visible results and approvals.
+MCP Workflow makes repeatable tasks easy to create using AI. Describe what you want in plain language, organize it into steps, and save an automation you can run again whenever needed. Start with a simple Text step, add skills or connected apps when useful, and describe API operations alongside their documentation. Codex chooses the underlying tools automatically. Every step finishes before the next one starts, carries its results forward, and shows progress and timing so you can see what the automation is doing.
+
+Automations currently run on demand through **Run workflow** and **Run again**. Scheduled, unattended, and event-triggered execution are not implemented in this release.
 
 ## Screenshots
 
 Actual Windows Tauri application. Earlier screenshots show the original sidebar; version 0.1.2 removes the Tools category and individual tool entries.
+
+![AI automation executing a repeated Text step with an active glow and live elapsed time](docs/screenshots/automation-running.png)
+
+![Completed automation replay with two successful runs, per-step durations, and average completion times](docs/screenshots/automation-completed.png)
 
 ![Version 0.1.2 sidebar with Skills, Plugins, and Apps; tools are chosen automatically during execution](docs/screenshots/simplified-sidebar.png)
 
@@ -40,6 +46,8 @@ The browser-only preview (`npm run dev`) supports workflow editing, import, and 
 To verify your session, import [examples/connection-check.json](examples/connection-check.json), set your workspace folder, and run it. Its two instruction steps make no tool calls: the second repeats the first step's token to verify conversation continuity. Running it consumes your normal Codex plan allowance.
 
 For an API flow, import [examples/api-starter.json](examples/api-starter.json) and replace the example endpoint, reference documentation, and instructions with your own before running. The included `api.example.com` address is a placeholder, not a working service.
+
+For a plain-language automation with repetitions, import [examples/repeatable-text-flow.json](examples/repeatable-text-flow.json). Its first Text step runs twice, then the second Text step summarizes those results. Set your workspace and connect Codex before running.
 
 ## Build a workflow
 
@@ -85,6 +93,8 @@ The smoke check performs account and capability discovery only; it does not star
 Initial verification on Windows with Codex `0.165.0-alpha.1.2`: production frontend build, five workflow validation tests, Rust compilation, read-only account/capability discovery, and a real two-step ChatGPT-backed run with conversation continuity. The UI screenshots above are from this desktop run. API calls depend on each API's documentation, authentication, and available tools; no authenticated third-party API write was performed during verification.
 
 Repeat and timing coverage now includes 17 tests for immutable execution plans, ordered repetitions, delayed completions, cancellation, failed/blocked outcomes, unfinished agents/tools, import compatibility, and timing averages across reruns.
+
+Version 0.3.1 was also verified in the Windows desktop app with two real runs of the repeated Text-step example: three sequential repetitions completed per run, the previous results reached the summary step, total runs increased to two, and step averages accumulated across both runs. The running and completed automation screenshots show that verification.
 
 ## Project maintenance
 

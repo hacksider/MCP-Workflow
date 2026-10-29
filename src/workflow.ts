@@ -66,8 +66,8 @@ export const newStep = (kind: Step["kind"], capability?: Capability): Step => ({
 export const newWorkflow = (): Workflow => ({
   id: crypto.randomUUID(),
   schemaVersion: 1,
-  name: "Untitled workflow",
-  description: "Turn an idea into a repeatable process.",
+  name: "Untitled automation",
+  description: "Describe a repeatable task and let AI handle the steps.",
   cwd: "",
   instructions: "",
   steps: [],

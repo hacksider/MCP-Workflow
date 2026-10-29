@@ -589,7 +589,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.3.0</span>
+          <span className="version">0.3.1</span>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -657,7 +657,7 @@ function App() {
                 <span className="empty-icon">
                   <Plug size={24} />
                 </span>
-                <h3>Your capabilities, together.</h3>
+                <h3>Build your AI automation.</h3>
                 <p>
                   Connect Codex and choose a workspace to discover skills,
                   plugins, and apps.
@@ -710,12 +710,12 @@ function App() {
         </aside>
         <main>
           <div className="breadcrumb">
-            <Layers size={14} /> Workspace <ChevronRight size={13} /> Workflow
+            <Layers size={14} /> Workspace <ChevronRight size={13} /> Automation
             studio
           </div>
           <div className="workflow-heading">
             <div>
-              <span className="section-eyebrow">WORKFLOW STUDIO</span>
+              <span className="section-eyebrow">AI AUTOMATION</span>
               <input
                 className="workflow-title"
                 aria-label="Workflow name"
@@ -875,13 +875,13 @@ function App() {
                     <GitBranch size={28} />
                   </span>
                   <h2>
-                    A little structure.
-                    <br />A lot of possibility.
+                    Describe it once.
+                    <br />Run it whenever you need.
                   </h2>
                   <p>
-                    Give your AI a sequence to follow.
+                    Turn a repeatable task into an AI automation.
                     <br />
-                    Start with instructions, an API, or a capability.
+                    Start with a Text step and describe what to do.
                   </p>
                 </div>
               )}
