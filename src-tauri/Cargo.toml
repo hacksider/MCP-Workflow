@@ -4,6 +4,7 @@ version = "0.16.1"
 description = "A local Codex workflow studio"
 authors = ["MCP Workflow"]
 edition = "2021"
+default-run = "mcp-workflow"
 license = "PolyForm-Noncommercial-1.0.0"
 
 [build-dependencies]

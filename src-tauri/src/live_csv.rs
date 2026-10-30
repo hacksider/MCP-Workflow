@@ -15,7 +15,7 @@ struct LiveFile {
 }
 #[derive(Default)]
 pub struct LiveCsv(Mutex<HashMap<String, LiveFile>>);
-fn write(
+pub(crate) fn write(
     state: &LiveCsv,
     cwd: &str,
     name: &str,

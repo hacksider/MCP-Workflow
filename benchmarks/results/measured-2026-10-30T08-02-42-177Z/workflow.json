@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "id": "amazon-scraper-demo",
+  "name": "Amazon-style scraper demonstration",
+  "description": "A basic demonstration of this source-available tool: two fictional pages, pagination, deduplication and CSV/JSON export. No live Amazon requests.",
+  "cwd": "",
+  "instructions": "Demonstrate repeatable web scraping using bundled fictional Amazon-style product pages. Not affiliated with Amazon. Live sites require permission and compatible selectors; stop on blocks.",
+  "maxExecutions": 40,
+  "steps": [
+    {
+      "id": "inputs",
+      "kind": "values",
+      "name": "Start with a sample page",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "values": "{\"url\": \"fixture://amazon-demo/page-1\"}"
+    },
+    {
+      "id": "pace",
+      "kind": "wait",
+      "name": "Pause between page requests",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "wait": {
+        "seconds": 3
+      }
+    },
+    {
+      "id": "fetch",
+      "kind": "fetch",
+      "name": "Fetch the product page",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "fetch": {
+        "url": "{{vars.url}}",
+        "maxPages": 3
+      }
+    },
+    {
+      "id": "extract",
+      "kind": "extract",
+      "name": "Extract product fields",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "extract": {
+        "source": "{{steps.fetch.outputs}}",
+        "rowSelector": "[data-asin]",
+        "fields": [
+          {
+            "name": "asin",
+            "selector": "",
+            "attribute": "data-asin",
+            "required": true
+          },
+          {
+            "name": "title",
+            "selector": "h2",
+            "attribute": "",
+            "required": true
+          },
+          {
+            "name": "price",
+            "selector": ".a-offscreen",
+            "attribute": ""
+          },
+          {
+            "name": "url",
+            "selector": ".product-link",
+            "attribute": "href"
+          }
+        ],
+        "nextSelector": ".s-pagination-next"
+      }
+    },
+    {
+      "id": "collect",
+      "kind": "collect",
+      "name": "Collect unique products",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "collect": {
+        "source": "{{steps.extract.outputs.rows}}",
+        "dataset": "products",
+        "uniqueKey": "asin",
+        "liveCsvName": "amazon-demo-products"
+      }
+    },
+    {
+      "id": "pages",
+      "kind": "counter",
+      "name": "Count fetched pages",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "counter": {
+        "limit": 3,
+        "below": "pagination",
+        "after": "csv"
+      }
+    },
+    {
+      "id": "pagination",
+      "kind": "condition",
+      "name": "Is there another page?",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "condition": {
+        "left": "{{steps.extract.outputs.nextUrl}}",
+        "operator": "truthy",
+        "right": "",
+        "yes": "advance",
+        "no": "csv"
+      }
+    },
+    {
+      "id": "advance",
+      "kind": "values",
+      "name": "Move to the next page",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "values": "{\"url\": \"{{steps.extract.outputs.nextUrl}}\"}",
+      "next": "pace"
+    },
+    {
+      "id": "csv",
+      "kind": "export",
+      "name": "Save products as CSV",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "export": {
+        "dataset": "products",
+        "format": "csv",
+        "name": "amazon-demo-products"
+      }
+    },
+    {
+      "id": "json",
+      "kind": "export",
+      "name": "Save products as JSON",
+      "instructions": "",
+      "endpoint": "",
+      "documentation": "",
+      "repeat": 1,
+      "export": {
+        "dataset": "products",
+        "format": "json",
+        "name": "amazon-demo-products"
+      },
+      "next": "$end"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{"phase":"start","tool":"catalog_wait","args":{"seconds":3},"at":1793347468730}
+{"phase":"end","tool":"catalog_wait","durationMs":3009.9272,"at":1793347471739}
+{"phase":"start","tool":"catalog_fetch_page","args":{"url":"fixture://amazon-demo/page-1"},"at":1793347473659}
+{"phase":"end","tool":"catalog_fetch_page","durationMs":1.0756000000001222,"at":1793347473660}
+{"phase":"start","tool":"catalog_collect_rows","args":{"rows":[{"asin":"DEMO001","title":"Notebook","price":"$12.99","url":"https://example.com/demo/DEMO001"},{"asin":"DEMO002","title":"Desk lamp","price":"$24.50","url":"https://example.com/demo/DEMO002"},{"asin":"DEMO003","title":"USB cable","price":"$8.00","url":"https://example.com/demo/DEMO003"}],"dataset":"products","uniqueKey":"asin"},"at":1793347476395}
+{"phase":"end","tool":"catalog_collect_rows","durationMs":11.956100000001243,"at":1793347476407}
+{"phase":"start","tool":"catalog_wait","args":{"seconds":3},"at":1793347479379}
+{"phase":"end","tool":"catalog_wait","durationMs":3012.421400000003,"at":1793347482392}
+{"phase":"start","tool":"catalog_fetch_page","args":{"url":"fixture://amazon-demo/page-2"},"at":1793347484800}
+{"phase":"end","tool":"catalog_fetch_page","durationMs":0.8212000000021362,"at":1793347484801}
+{"phase":"start","tool":"catalog_collect_rows","args":{"rows":[{"asin":"DEMO003","title":"USB cable","price":"$8.00","url":"https://example.com/demo/DEMO003"},{"asin":"DEMO004","title":"Travel mug","price":"$19.95","url":"https://example.com/demo/DEMO004"},{"asin":"DEMO005","title":"Book stand","price":"$15.75","url":"https://example.com/demo/DEMO005"}],"dataset":"products","uniqueKey":"asin"},"at":1793347490036}
+{"phase":"end","tool":"catalog_collect_rows","durationMs":6.691599999998289,"at":1793347490043}
+{"phase":"start","tool":"catalog_export_rows","args":{"dataset":"products","format":"csv","name":"products"},"at":1793347492105}
+{"phase":"end","tool":"catalog_export_rows","durationMs":1.035200000002078,"at":1793347492106}
+{"phase":"start","tool":"catalog_export_rows","args":{"dataset":"products","format":"json","name":"products"},"at":1793347492110}
+{"phase":"end","tool":"catalog_export_rows","durationMs":6.527099999999336,"at":1793347492117}

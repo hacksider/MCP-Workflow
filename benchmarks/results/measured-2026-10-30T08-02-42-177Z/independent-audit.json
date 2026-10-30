@@ -1,0 +1,127 @@
+{
+  "verifier": "Python standard-library csv and json, independent of Node validator",
+  "runsAudited": 20,
+  "allLedgerScoresReproduced": true,
+  "checks": [
+    {
+      "pair": 1,
+      "method": "agent",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 1,
+      "method": "workflow",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 2,
+      "method": "workflow",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 2,
+      "method": "agent",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 3,
+      "method": "agent",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 3,
+      "method": "workflow",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 4,
+      "method": "workflow",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 4,
+      "method": "agent",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 5,
+      "method": "agent",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 5,
+      "method": "workflow",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 6,
+      "method": "workflow",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 6,
+      "method": "agent",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 7,
+      "method": "agent",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 7,
+      "method": "workflow",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 8,
+      "method": "workflow",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 8,
+      "method": "agent",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 9,
+      "method": "agent",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 9,
+      "method": "workflow",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 10,
+      "method": "workflow",
+      "correctFields": 20,
+      "success": true
+    },
+    {
+      "pair": 10,
+      "method": "agent",
+      "correctFields": 20,
+      "success": true
+    }
+  ]
+}

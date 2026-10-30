@@ -1,0 +1,19 @@
+{
+  "id": "pilot-2026-10-30T08-00-39-626Z",
+  "pilot": true,
+  "dateUTC": "2026-10-30T08:00:39.702Z",
+  "timezone": "Asia/Manila",
+  "pairs": 1,
+  "timeoutSeconds": 180,
+  "delaySeconds": 3,
+  "node": "v24.12.0",
+  "platform": "win32",
+  "cpu": "13th Gen Intel(R) Core(TM) i7-13700K",
+  "logicalCpus": 24,
+  "codeCommit": "587b509e3938bc0715a029ba09f25102733afb45",
+  "codexVersion": "codex-cli 0.165.0-alpha.1.2",
+  "templateSha256": "a4ae86d5897c236fa2fdb5dbd2463cdc50374e8df2638ef42a82152f2f0021aa",
+  "promptSha256": "4e57fb63346684de7b807cb56d27e20b74ae1dabe9f04be558d6e278e5ccd2b5",
+  "engineSha256": "2e3532478c28be37b2cdb02cda8a13fea6160e832d0bde35e81d609eb3e8923e",
+  "scope": "Headless production workflow executor and native Rust backend versus prompt-driven Codex with the same native operations exposed via MCP. No UI/browser rendering or live network scraping. Includes method setup, 6 seconds of deliberate pacing, execution, agent completion and independent validation. Excludes building/configuring the reusable workflow, compilation, and fixture generation."
+}

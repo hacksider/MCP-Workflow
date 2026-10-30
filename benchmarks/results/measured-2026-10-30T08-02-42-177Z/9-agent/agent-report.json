@@ -1,0 +1,29 @@
+{
+  "status": "completed",
+  "report": {
+    "status": "completed",
+    "summary": "Fetched 2 pages, waiting 3 seconds before each fetch. Collected 5 unique products, preserving the first occurrence per asin. Updated the products dataset and live CSV, then exported CSV and JSON with exactly asin, title, price, and url."
+  },
+  "model": "gpt-6.1-sol",
+  "effort": "low",
+  "tokens": {
+    "total": {
+      "totalTokens": 183042,
+      "inputTokens": 181415,
+      "cachedInputTokens": 170880,
+      "cacheWriteInputTokens": 0,
+      "outputTokens": 1627,
+      "reasoningOutputTokens": 0
+    },
+    "last": {
+      "totalTokens": 19400,
+      "inputTokens": 19331,
+      "cachedInputTokens": 18816,
+      "cacheWriteInputTokens": 0,
+      "outputTokens": 69,
+      "reasoningOutputTokens": 0
+    },
+    "modelContextWindow": 475000
+  },
+  "errors": []
+}

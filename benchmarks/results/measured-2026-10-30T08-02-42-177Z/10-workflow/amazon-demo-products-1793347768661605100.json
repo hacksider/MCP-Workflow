@@ -1,0 +1,32 @@
+[
+  {
+    "asin": "DEMO001",
+    "price": "$12.99",
+    "title": "Notebook",
+    "url": "https://example.com/demo/DEMO001"
+  },
+  {
+    "asin": "DEMO002",
+    "price": "$24.50",
+    "title": "Desk lamp, warm & bright",
+    "url": "https://example.com/demo/DEMO002"
+  },
+  {
+    "asin": "DEMO003",
+    "price": "$8.00",
+    "title": "USB cable",
+    "url": "https://example.com/demo/DEMO003"
+  },
+  {
+    "asin": "DEMO004",
+    "price": "$19.95",
+    "title": "Travel mug",
+    "url": "https://example.com/demo/DEMO004"
+  },
+  {
+    "asin": "DEMO005",
+    "price": "$15.75",
+    "title": "Book stand",
+    "url": "https://example.com/demo/DEMO005"
+  }
+]

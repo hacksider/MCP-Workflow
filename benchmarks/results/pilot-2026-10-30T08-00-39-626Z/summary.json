@@ -1,0 +1,25 @@
+{
+  "agent": {
+    "runs": 1,
+    "successful": 1,
+    "successRate": 1,
+    "meanSeconds": 38.1443916,
+    "medianSeconds": 38.1443916,
+    "minSeconds": 38.1443916,
+    "maxSeconds": 38.1443916,
+    "fieldAccuracy": 1,
+    "toolErrors": 0
+  },
+  "workflow": {
+    "runs": 1,
+    "successful": 1,
+    "successRate": 1,
+    "meanSeconds": 6.106219400000001,
+    "medianSeconds": 6.106219400000001,
+    "minSeconds": 6.106219400000001,
+    "maxSeconds": 6.106219400000001,
+    "fieldAccuracy": 1,
+    "toolErrors": 0
+  },
+  "speedup": 6.2468098673296915
+}
