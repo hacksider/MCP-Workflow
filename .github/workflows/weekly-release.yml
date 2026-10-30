@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 1 * * 1' # Monday 09:00 Asia/Manila (01:00 UTC)
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a release after all builds pass (leave off to build binaries only)
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -94,7 +100,7 @@ jobs:
 
   notes:
     needs: plan
-    if: needs.plan.outputs.release == 'true'
+    if: needs.plan.outputs.release == 'true' && (github.event_name == 'schedule' || inputs.publish == true)
     runs-on: ubuntu-22.04
     timeout-minutes: 7
     continue-on-error: true # Publishing prepares the free fallback if this entire job fails.
@@ -130,7 +136,7 @@ jobs:
 
   publish:
     needs: [plan, build, notes]
-    if: always() && needs.plan.outputs.release == 'true' && needs.build.result == 'success'
+    if: always() && needs.plan.outputs.release == 'true' && needs.build.result == 'success' && (github.event_name == 'schedule' || inputs.publish == true)
     runs-on: ubuntu-22.04
     permissions:
       contents: write

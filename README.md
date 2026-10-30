@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.17.3** · Tauri + React + Rust · Desktop AI automation
+Current version: **0.17.4** · Tauri + React + Rust · Desktop AI automation
 
 [Comparison](#comparison-with-prompt-driven-mcp-agents) · [Demo](#amazon-scraper-demo) · [Build with AI](#build-a-workflow-with-ai)
 
@@ -189,13 +189,15 @@ npm install
 npm run desktop
 ```
 
+To build an installer for your current platform, run `npm ci`, then `npm run desktop:build`. On Windows, the installer is written to `src-tauri/target/release/bundle/nsis/`. For the complete Windows, Linux and macOS set, use the build-only manual GitHub workflow below.
+
 AI steps additionally need the selected provider's runtime and sign-in or credentials. [Setup, references, loops, examples and limits →](docs/guide.md)
 
 Manual runs are supported. Scheduling and unattended operation are not implemented. Live scraping requires permitted access and selectors suited to the site's HTML; JavaScript rendering and access-block bypass are not built into Fetch page.
 
 ## Automatic desktop releases
 
-Every **Monday at 09:00 Manila time (01:00 UTC)**, GitHub Actions checks for application or build changes since the last published release. Documentation-only changes are skipped. The first run releases the current application. You can also run **Actions → Weekly desktop release → Run workflow** on the default branch.
+Every **Monday at 09:00 Manila time (01:00 UTC)**, GitHub Actions checks for application or build changes since the last published release. Documentation-only changes are skipped. The first run releases the current application. You can also run **Actions → Weekly desktop release → Run workflow** on the default branch. Manual runs default to **building binaries only**: download the three `installer-*` artifacts from the completed run. Enable **Publish a release after all builds pass** only when you want to publish; scheduled Monday runs publish automatically.
 
 A release includes **Windows x64 (.exe)**, **Linux x64 (.AppImage and .deb)**, **macOS Intel + Apple silicon (.dmg)** and **SHA256SUMS**. All three builds and their tests must succeed before publishing. Interrupted uploads stay as a draft and can be retried. Tags include the application version and source revision, so rerunning the same revision does not create another release.
 
