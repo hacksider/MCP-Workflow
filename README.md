@@ -4,13 +4,37 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.16.0** · Tauri + React + Rust · Windows installer
+Current version: **0.16.1** · Tauri + React + Rust · Windows installer
+
+[Demo](#amazon-scraper-demo) · [Comparison](#comparison-with-prompt-driven-mcp-agents) · [Build with AI](#build-a-workflow-with-ai)
 
 ## Amazon scraper demo
 
 Watch the workflow beside the demo pages, with conditions, pagination and a CSV filling in real time.
 
 https://github.com/user-attachments/assets/5cc4b2e4-184b-478b-a4ba-59ce069c23c0
+
+## Comparison with prompt-driven MCP agents
+
+| Area | Agent given a prompt and MCP tools | MCP Workflow |
+| --- | --- | --- |
+| First-time setup | Describe the task and start; often simpler for one-off work | Generate or build a graph, review it, then run |
+| Speed on repeated tasks | May plan again; some hosts reuse plans or scripts | Reuses saved steps; native steps avoid AI inference |
+| Speed on AI-heavy tasks | Depends on model, tools and service latency | Uses the same provider; separate step turns can add overhead |
+| Output accuracy | Depends on instructions, model, tools and validation | Fixed native rules are consistent; AI steps can still make mistakes |
+| Accuracy when reused | The same prompt can lead to different execution paths | Saved routes and fields repeat; incorrect rules repeat errors too |
+| Reusability | Save the prompt or have the agent create reusable scripts | Named workflows, templates and JSON import/export |
+| Creating flows with AI | Agent can describe a plan in conversation | **Build with AI** creates a connected draft to review and save |
+| Branches and loops | Agent interprets the prompt at runtime | Explicit conditions, loops, counters and execution limits |
+| Error recovery | Depends on the agent host and instructions | Configurable retries, inactivity timeout and error paths |
+| Visibility | Conversation and tool traces vary by host | Active-step glow, countdowns, counters and live CSV |
+| Cost | Depends on model usage, tools and billing | Native steps need no model inference; AI steps and generation do |
+| Flexibility | Useful for exploration and changing requirements | Useful for recurring tasks with known inputs and outputs |
+| Scheduling | Available in some agent hosts | Manual runs only; delays do not resume after shutdown |
+
+**Speed and accuracy advantages have not been measured in a matched benchmark.** These are design differences and expectations, not performance scores. Agent hosts vary, and agents can also build reusable automation.
+
+**[Download the comparison spreadsheet](outputs/2026-10-30-mcp-comparison/mcp-workflow-comparison.xlsx)** — includes the detailed comparison, observed scraper row-count chart and a blank benchmark sheet for measuring both approaches. [Methodology and limitations](docs/comparison.md).
 
 ## Try it yourself
 
@@ -88,8 +112,6 @@ npm run desktop
 ```
 
 AI steps additionally need the selected provider's runtime and sign-in or credentials. [Setup, references, loops, examples and limits →](docs/guide.md)
-
-[Compare saved workflows with prompt-driven MCP agents](docs/comparison.md), including reuse, accuracy expectations and a downloadable benchmark worksheet. No matched speed or accuracy advantage has been measured yet.
 
 Manual runs are supported. Scheduling and unattended operation are not implemented. Live scraping requires permitted access and selectors suited to the site's HTML; JavaScript rendering and access-block bypass are not built into Fetch page.
 
