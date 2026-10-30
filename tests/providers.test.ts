@@ -4,6 +4,13 @@ import { codexProviderOptions, defaultProvider } from "../src/providers";
 // @ts-ignore JavaScript helper exports are shared with the packaged Node process.
 import { providerEnvironment, runTurn } from "../scripts/claude-runner.mjs";
 describe("provider isolation", () => {
+  it("disables tools and configuration hooks when designing workflows",async()=>{
+    let options:any;
+    const queryFn=(request:any)=>{options=request.options;return {async *[Symbol.asyncIterator](){yield {type:"result",subtype:"success",structured_output:{status:"completed",outputs:"{}"}};},close(){}};};
+    await runTurn({provider:{kind:"claude"},cwd:"C:/work",prompt:"design",schema:{},designOnly:true},()=>{},async()=>{throw Error("Should never request approval");},undefined,queryFn);
+    expect(options.tools).toEqual([]);expect(options.mcpServers).toEqual({});expect(options.settingSources).toEqual([]);
+    expect((await options.canUseTool("Bash",{command:"write"})).behavior).toBe("deny");
+  });
   it("isolates API keys from subscription auth and selects Bedrock explicitly", () => {
     const source = {
       ANTHROPIC_API_KEY: "api-secret",

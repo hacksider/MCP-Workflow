@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.15.2** · Tauri + React + Rust · Windows installer
+Current version: **0.16.0** · Tauri + React + Rust · Windows installer
 
 ## Amazon scraper demo
 
@@ -21,6 +21,14 @@ https://github.com/user-attachments/assets/5cc4b2e4-184b-478b-a4ba-59ce069c23c0
 The Amazon-style example uses **fictional bundled pages**. It fetches two pages, extracts products, follows pagination, removes duplicates and saves **five products** as CSV and JSON. No account or live Amazon access is required. This is a basic demonstration of how the tool works, not an Amazon integration.
 
 [Download the Amazon scraper video](docs/demo/amazon-scraper-demo.mp4) · [Template JSON](examples/amazon-scraper-demo.json) · [Example output](docs/demo/products.json)
+
+## Build a workflow with AI
+
+Choose a workspace and AI provider in **Workflow settings**, then click **Build with AI**. Describe the task, generate a draft, and review its graph, instructions and missing inputs. Click **Save as new workflow**, finish any required settings, and run it when ready. Your existing flows stay in the library.
+
+For example: “Read uploaded quotes, compare prices, and fill a form with the best supplier. Report missing information instead of guessing.” AI can also design branches, bounded loops, counters, delays and API steps. Check page selectors, credentials and write operations before running. Generation uses the selected provider and does not execute the workflow.
+
+![A workflow generated from a prompt, ready for review](docs/screenshots/ai-workflow-builder.jpg)
 
 ## Save and manage workflows
 
@@ -80,6 +88,8 @@ npm run desktop
 ```
 
 AI steps additionally need the selected provider's runtime and sign-in or credentials. [Setup, references, loops, examples and limits →](docs/guide.md)
+
+[Compare saved workflows with prompt-driven MCP agents](docs/comparison.md), including reuse, accuracy expectations and a downloadable benchmark worksheet. No matched speed or accuracy advantage has been measured yet.
 
 Manual runs are supported. Scheduling and unattended operation are not implemented. Live scraping requires permitted access and selectors suited to the site's HTML; JavaScript rendering and access-block bypass are not built into Fetch page.
 

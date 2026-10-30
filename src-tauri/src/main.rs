@@ -161,6 +161,7 @@ async fn connect(app: tauri::AppHandle, state: State<'_, Server>) -> Reply {
 async fn rpc(state: State<'_, Server>, method: String, params: Value) -> Reply {
     const ALLOWED: &[&str] = &[
         "account/read",
+        "config/read",
         "account/login/start",
         "account/login/cancel",
         "skills/list",

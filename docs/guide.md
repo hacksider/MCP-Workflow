@@ -14,6 +14,14 @@ JSON import always creates a separate copy with fresh run statistics, even if it
 
 Workflows and cumulative timing statistics are saved on this device. Each run starts with fresh variables and datasets. Files, API writes and computer actions remain external side effects; repeating a run can repeat those actions.
 
+## Generate a draft with AI
+
+**Build with AI** uses the provider and workspace selected in Workflow settings: ChatGPT subscription, Claude subscription, OpenAI API, Claude API or Bedrock. Describe inputs, desired output, branch rules, repeat limits and failure behavior. Generate, inspect the graph and expand the step settings, then save a new workflow. You can reconnect the preview graph or revise the prompt and generate again. Saving does not execute the flow or replace the current workflow.
+
+The builder validates the schema, step IDs and destinations. Every generated step must be reachable from Beginning and have a possible path to End. A possible exit is not proof of successful termination; execution limits still apply. Missing uploads and TODO inputs are flagged. AI-generated CSS selectors need verification against actual HTML. Authentication, provider limits and model access still apply. The builder cannot promise a correct task from ambiguous instructions.
+
+Design uses an isolated read-only Codex thread with shell, web search, apps, plugins and configured MCP servers disabled, or a Claude design-only turn with tools and settings sources disabled. It does not install plugins or run generated actions. Stop interrupts generation; a three-minute limit requests cancellation. Native workflow runs still require separate user action.
+
 ## Write useful Instructions
 
 Give the AI a concrete task, inputs, constraints, and completion criteria. For example:

@@ -1185,3 +1185,11 @@ label small {
 .graph-node .graph-countdown,.graph-node .graph-counter {display:block;font-size:23px;color:#337344;margin:6px 0 10px;font-variant-numeric:tabular-nums;}
 .countdown-inline {margin-left:auto;color:#4b7f51;font-size:11px;font-variant-numeric:tabular-nums;}
 .monitor-counter {display:inline-block;margin-left:14px;font-size:12px;color:#477844;font-weight:600;}
+.modal.ai-builder { width: min(1100px, 92vw); }
+.ai-builder h2 { display: flex; gap: 8px; align-items: center; }
+.ai-builder textarea { width: 100%; margin-top: 8px; }
+.builder-actions { display: flex; gap: 10px; margin: 12px 0; }
+.builder-graph { height: 420px; position: relative; margin: 14px 0; border: 1px solid #dbe5df; }
+.builder-error { color: #a5332c !important; }
+.builder-notices { padding-left: 20px; font-size: 12px; line-height: 1.7; color: #805d14; }
+.builder-step { border-bottom: 1px solid #dbe5df; padding: 12px 0; }

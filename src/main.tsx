@@ -111,6 +111,8 @@ import {
   libraryKey,
 } from "./library";
 import { WorkflowLibrary as LibraryDialog } from "./WorkflowLibrary";
+import { WorkflowBuilder } from "./WorkflowBuilder";
+import { generateWorkflow } from "./builderRuntime";
 const icons = {
   instruction: FileText,
   api: Globe,
@@ -163,6 +165,8 @@ function App() {
   const [library, setLibrary] = useState(initial.library);
   const [autoSave, setAutoSave] = useState(!initial.error);
   const [libraryOpen, showLibrary] = useState(false);
+  const [builderOpen, showBuilder] = useState(false);
+  const builderActive = useRef(false);
   const [startNew, setStartNew] = useState(false);
   const [saveNotice, setSaveNotice] = useState("");
   const workflow = activeWorkflow(library);
@@ -373,6 +377,7 @@ function App() {
     const cleanup: (() => void)[] = [];
     const keep = (fn: () => void) => (disposed ? fn() : cleanup.push(fn));
     listen<any>("provider-event", ({ payload: e }) => {
+      if (builderActive.current) return;
       attemptControl.current?.heartbeat();
       if (e.kind === "approval") attemptControl.current?.pause(true);
       if (e.kind === "approval")
@@ -395,6 +400,7 @@ function App() {
         );
     }).then(keep);
     onEvent((event) => {
+      if (builderActive.current) return;
       const p = event.params;
       attemptControl.current?.heartbeat();
       if (event.id !== undefined) {
@@ -1158,7 +1164,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.15.2</span>
+          <span className="version">0.16.0</span>
         </div>
         <div className="workflow-library-actions">
           <button
@@ -1185,6 +1191,7 @@ function App() {
             <Check size={15} />
             Save
           </button>
+          <button disabled={running} onClick={() => showBuilder(true)}><Sparkles size={15}/>Build with AI</button>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -2268,6 +2275,18 @@ function App() {
           onOpenCsv={(path) => openPath(path).catch((e) => setError(String(e)))}
         />
       )}
+      {builderOpen && <WorkflowBuilder base={workflow} onClose={()=>showBuilder(false)} onGenerate={async(prompt,signal,progress)=>{
+        if(runningLock.current)throw Error("Wait for the active operation to finish.");
+        runningLock.current=true;builderActive.current=true;
+        try{
+          const draft = await generateWorkflow(prompt, {...workflow, provider: {...provider, model: provider.model || (provider.kind === "chatgpt" ? model : "")}}, signal, progress);
+          if (!isClaude(provider)) {
+            try { const state = await rpc("account/read"); setConnected(true); setAccount(state.account); } catch { /* Draft remains usable if the connection closes after generation. */ }
+          }
+          return draft;
+        }
+        finally{runningLock.current=false;builderActive.current=false;}
+      }} onSave={flow=>{addToLibrary(flow);showBuilder(false);}}/>}
       {libraryOpen && (
         <LibraryDialog
           library={library}
