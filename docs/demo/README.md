@@ -4,6 +4,8 @@ These recordings show MCP Workflow 0.15.0 on Windows. Frames were captured throu
 
 ## Amazon-style scraper
 
+This is the featured playable video in the [main README](../../README.md#amazon-scraper-demo). The GitHub attachment is a copy of `amazon-scraper-demo.mp4`; the repository copy remains available for downloading.
+
 `amazon-scraper-demo.mp4` shows the workflow beside the exact bundled HTML pages it fetches. It includes:
 
 1. A real delay countdown before requesting each page.

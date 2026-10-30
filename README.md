@@ -4,11 +4,15 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.15.1** · Tauri + React + Rust · Windows installer
+Current version: **0.15.2** · Tauri + React + Rust · Windows installer
 
-![Workflow beside the fetched page and a CSV filling in real time](docs/screenshots/scraper-live-view.png)
+## Amazon scraper demo
 
-## Try the scraper demo
+Watch the workflow beside the demo pages, with conditions, pagination and a CSV filling in real time.
+
+https://github.com/user-attachments/assets/5cc4b2e4-184b-478b-a4ba-59ce069c23c0
+
+## Try it yourself
 
 1. Open the desktop app and click **Scraper demo**.
 2. In **Workflow settings**, choose an existing workspace folder.
@@ -16,9 +20,7 @@ Current version: **0.15.1** · Tauri + React + Rust · Windows installer
 
 The Amazon-style example uses **fictional bundled pages**. It fetches two pages, extracts products, follows pagination, removes duplicates and saves **five products** as CSV and JSON. No account or live Amazon access is required. This is a basic demonstration of how the tool works, not an Amazon integration.
 
-[![Watch the desktop demo](docs/screenshots/scraper-csv-result.png)](docs/demo/amazon-scraper-demo.mp4)
-
-**[Watch the video](docs/demo/amazon-scraper-demo.mp4)** · [Template JSON](examples/amazon-scraper-demo.json) · [Example output](docs/demo/products.json)
+[Download the Amazon scraper video](docs/demo/amazon-scraper-demo.mp4) · [Template JSON](examples/amazon-scraper-demo.json) · [Example output](docs/demo/products.json)
 
 ## Save and manage workflows
 
