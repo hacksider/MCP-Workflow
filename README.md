@@ -4,17 +4,56 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.16.1** · Tauri + React + Rust · Windows installer
+Current version: **0.16.2** · Tauri + React + Rust · Windows installer
 
-[Demo](#amazon-scraper-demo) · [Comparison](#comparison-with-prompt-driven-mcp-agents) · [Build with AI](#build-a-workflow-with-ai)
-
-## Amazon scraper demo
-
-Watch the workflow beside the demo pages, with conditions, pagination and a CSV filling in real time.
-
-https://github.com/user-attachments/assets/5cc4b2e4-184b-478b-a4ba-59ce069c23c0
+[Comparison](#comparison-with-prompt-driven-mcp-agents) · [Demo](#amazon-scraper-demo) · [Build with AI](#build-a-workflow-with-ai)
 
 ## Comparison with prompt-driven MCP agents
+
+**The saved workflow engine finished our repeatable scraper task 6.54× faster: 6.12 seconds versus 40.05 seconds on average. Both approaches produced correct output in every trial.**
+
+![Measured scraper comparison: execution time and observed output accuracy](docs/charts/scraper-benchmark.png)
+
+| Measured result | Prompt + MCP agent | Saved workflow engine |
+| --- | ---: | ---: |
+| Average completion time | 40.05 s | **6.12 s** |
+| Median completion time | 39.51 s | **6.12 s** |
+| Fastest–slowest run | 29.25–55.79 s | 6.10–6.17 s |
+| Successful runs | 10/10 | 10/10 |
+| Correct expected fields | 200/200 (100%) | 200/200 (100%) |
+| Changed-input cases, without editing the prompt/flow | 5/5 correct | 5/5 correct |
+| Average model tokens per run, including cached input | 153,304.4 | **0** |
+| Model inference during each run | Yes | No, native steps only |
+
+**What we tested:** ten paired runs on the same two fictional catalog pages, with the same native parsing and file-writing functions, first-occurrence deduplication, CSV/JSON requirements and six seconds of deliberate waits. Five pairs changed the data. The agent used **GPT-6.1 Sol, low reasoning**, through a ChatGPT subscription. All output files and timing summaries were independently audited. Measured October 30, 2026.
+
+**Why use it for repeatable work:** save the execution plan once, then reuse native steps without asking a model to choose every action again. This benchmark measures the headless workflow engine, not UI rendering, live Amazon scraping or AI-heavy steps. It shows a speed benefit on this task and **no observed accuracy advantage**. Agents that reuse scripts or higher-level tools are a different baseline.
+
+**[Download the measured comparison spreadsheet](outputs/2026-10-30-mcp-comparison/mcp-workflow-comparison.xlsx)** · [All 20 trial records and output files](benchmarks/results/measured-2026-10-30T08-02-42-177Z) · [Methodology and limitations](docs/comparison.md) · [Reproduce the benchmark](scripts/benchmark/README.md)
+
+<details>
+<summary>Model tokens used in every measured run</summary>
+
+| Pair | Agent total | Input | Of which cached | Output | Native workflow total |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 | 182,967 | 181,332 | 143,232 | 1,635 | 0 |
+| 2 | 185,533 | 183,586 | 163,968 | 1,947 | 0 |
+| 3 | 142,184 | 141,586 | 122,880 | 598 | 0 |
+| 4 | 115,581 | 114,274 | 104,576 | 1,307 | 0 |
+| 5 | 118,116 | 116,178 | 83,456 | 1,938 | 0 |
+| 6 | 116,407 | 114,822 | 82,048 | 1,585 | 0 |
+| 7 | 118,093 | 116,177 | 97,408 | 1,916 | 0 |
+| 8 | 185,326 | 183,388 | 172,800 | 1,938 | 0 |
+| 9 | 183,042 | 181,415 | 170,880 | 1,627 | 0 |
+| 10 | 185,795 | 183,824 | 164,224 | 1,971 | 0 |
+| **Average** | **153,304.4** | 151,658.2 | 130,547.2 | 1,646.2 | **0** |
+
+These are cumulative model tokens for the full agent run, including repeated context across model calls. **Total = input + output**. Cached input is already included in input; it is not added again. The native graph used no model during these runs. AI-builder/setup tokens and AI-heavy steps are excluded. Token counts are not dollar costs.
+
+</details>
+
+<details>
+<summary>Compare features, flexibility and current limitations</summary>
 
 | Area | Agent given a prompt and MCP tools | MCP Workflow |
 | --- | --- | --- |
@@ -32,9 +71,13 @@ https://github.com/user-attachments/assets/5cc4b2e4-184b-478b-a4ba-59ce069c23c0
 | Flexibility | Useful for exploration and changing requirements | Useful for recurring tasks with known inputs and outputs |
 | Scheduling | Available in some agent hosts | Manual runs only; delays do not resume after shutdown |
 
-**Speed and accuracy advantages have not been measured in a matched benchmark.** These are design differences and expectations, not performance scores. Agent hosts vary, and agents can also build reusable automation.
+</details>
 
-**[Download the comparison spreadsheet](outputs/2026-10-30-mcp-comparison/mcp-workflow-comparison.xlsx)** — includes the detailed comparison, observed scraper row-count chart and a blank benchmark sheet for measuring both approaches. [Methodology and limitations](docs/comparison.md).
+## Amazon scraper demo
+
+Watch the workflow beside the demo pages, with conditions, pagination and a CSV filling in real time.
+
+https://github.com/user-attachments/assets/5cc4b2e4-184b-478b-a4ba-59ce069c23c0
 
 ## Try it yourself
 

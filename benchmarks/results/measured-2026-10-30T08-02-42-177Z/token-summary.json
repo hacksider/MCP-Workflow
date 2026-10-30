@@ -1,0 +1,48 @@
+{
+  "source": "Codex thread/tokenUsage/updated, cumulative per fresh trial thread",
+  "agent": {
+    "totalTokens": {
+      "meanPerRun": 153304.4,
+      "total": 1533044
+    },
+    "inputTokens": {
+      "meanPerRun": 151658.2,
+      "total": 1516582
+    },
+    "cachedInputTokens": {
+      "meanPerRun": 130547.2,
+      "total": 1305472
+    },
+    "outputTokens": {
+      "meanPerRun": 1646.2,
+      "total": 16462
+    },
+    "reasoningOutputTokens": {
+      "meanPerRun": 4.4,
+      "total": 44
+    }
+  },
+  "workflow": {
+    "totalTokens": {
+      "meanPerRun": 0,
+      "total": 0
+    },
+    "inputTokens": {
+      "meanPerRun": 0,
+      "total": 0
+    },
+    "cachedInputTokens": {
+      "meanPerRun": 0,
+      "total": 0
+    },
+    "outputTokens": {
+      "meanPerRun": 0,
+      "total": 0
+    },
+    "reasoningOutputTokens": {
+      "meanPerRun": 0,
+      "total": 0
+    }
+  },
+  "scope": "Native repeat execution only. AI builder/setup excluded. Cached input is included in input; do not add it again."
+}
