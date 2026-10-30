@@ -38,7 +38,7 @@ Click **Scraper demo** in the workflow header. This adds a separate workflow to 
 
 The [Amazon-style template](../examples/amazon-scraper-demo.json) uses two bundled HTML pages with fictional products. It makes no Amazon requests and is not affiliated with Amazon. It demonstrates this source-available tool; its noncommercial license is not an OSI open-source license.
 
-To design this example with AI, paste the [complete builder prompt](../examples/amazon-scraper-builder-prompt.txt) into **Build with AI**, review the generated steps, then save. Compare the result with the [workflow diagram](../README.md#prompt--workflow--results). Import the template JSON for the exact recorded graph. The supplied prompt is a reproducible brief, not the original template's creation transcript; the demo video shows template execution.
+To design this example with AI, paste the [complete builder prompt](../examples/amazon-scraper-builder-prompt.txt) into **Build with AI**, review the generated steps, then save. Compare the result with the [workflow diagram](../README.md#prompt--workflow--results). Import the template JSON for the exact recorded graph. The new [prompt-to-results video](demo/amazon-scraper-prompt-to-results.mp4) shows a real generation using that prompt, review of the live CSV setting, and execution of the same generated graph. Its [recorded workflow JSON](demo/ai-scraper-workflow.json) is available to import with your own workspace.
 
 | Step | What it does |
 | --- | --- |

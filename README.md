@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.17.2** · Tauri + React + Rust · Desktop AI automation
+Current version: **0.17.3** · Tauri + React + Rust · Desktop AI automation
 
 [Comparison](#comparison-with-prompt-driven-mcp-agents) · [Demo](#amazon-scraper-demo) · [Build with AI](#build-a-workflow-with-ai)
 
@@ -79,9 +79,11 @@ These are cumulative model tokens for the full agent run, including repeated con
 
 ## Amazon scraper demo
 
-Watch the workflow beside the demo pages, with conditions, pagination and a CSV filling in real time.
+Watch the **57-second prompt-to-results video**: enter the prompt, generate and review the workflow, enable live CSV, then run the same graph beside the demo pages. Conditions and a loop control pagination while the CSV fills in real time.
 
-https://github.com/user-attachments/assets/5cc4b2e4-184b-478b-a4ba-59ce069c23c0
+https://github.com/user-attachments/assets/1c049b0b-7a62-4cc5-a0d1-b4e64bbd4806
+
+[Download the captioned MP4 for sharing](docs/demo/amazon-scraper-prompt-to-results.mp4) · [Workflow created in this video](docs/demo/ai-scraper-workflow.json) · [Actual CSV result](docs/demo/ai-scraper-products.csv)
 
 ### Prompt → workflow → results
 
@@ -89,7 +91,7 @@ Paste the [complete scraper prompt](examples/amazon-scraper-builder-prompt.txt) 
 
 > Create an Amazon-style scraper using the bundled fictional pages. Extract asin, title, price and URL; collect unique products by asin and update a live CSV. Wait three seconds before each request. Count pages and stop at three. If another page exists, follow it and repeat; otherwise export CSV and JSON, then finish. Use native steps and bound the workflow to 40 step executions.
 
-The [complete saved workflow](examples/amazon-scraper-demo.json) used in the video follows this graph:
+The [AI-generated workflow recorded in the video](docs/demo/ai-scraper-workflow.json) follows this graph. During review, we set the Collect rows live CSV prefix, which the AI had flagged as unresolved. The original [one-click template](examples/amazon-scraper-demo.json) follows the same routing:
 
 ```mermaid
 flowchart TD
@@ -110,7 +112,7 @@ flowchart TD
 
 **Expected result:** the first page contributes three products; the second adds two unique products and skips one duplicate. No next page remains, so the condition chooses export and the flow reaches End. [View the five-row CSV](docs/demo/products.csv) · [View the JSON](docs/demo/products.json).
 
-The video shows the saved template executing, not an AI-generation session. The prompt above is a reproducible builder brief for that template; it is not a recovered transcript of its original creation. Generated drafts can differ: review them against the graph, or import the supplied JSON for the exact demonstrated workflow. This demo uses no AWS service or live Amazon website.
+The video shows an actual AI-generation session using the linked complete prompt, followed by review and execution of that same generated graph. Generation waiting time and idle review time are shortened; countdowns and CSV collection retain their observed timing. It includes one manual live CSV setting and does not claim a perfect unattended generation. Import the recorded workflow JSON to reproduce it; select your own workspace. This demo uses no AWS service or live Amazon website.
 
 ## Try it yourself
 
@@ -120,7 +122,7 @@ The video shows the saved template executing, not an AI-generation session. The 
 
 The Amazon-style example uses **fictional bundled pages**. It fetches two pages, extracts products, follows pagination, removes duplicates and saves **five products** as CSV and JSON. No account or live Amazon access is required. This is a basic demonstration of how the tool works, not an Amazon integration.
 
-[Download the Amazon scraper video](docs/demo/amazon-scraper-demo.mp4) · [Template JSON](examples/amazon-scraper-demo.json) · [Example output](docs/demo/products.json)
+[Earlier template-only recording](docs/demo/amazon-scraper-demo.mp4) · [Template JSON](examples/amazon-scraper-demo.json) · [Example output](docs/demo/products.json)
 
 ## Build a workflow with AI
 

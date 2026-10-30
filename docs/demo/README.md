@@ -1,8 +1,26 @@
 # Real desktop demonstrations
 
-These recordings show MCP Workflow 0.15.0 on Windows. Frames were captured through the computer-use runtime and encoded with FFmpeg. They contain actual UI execution, with no simulated progress or results. Idle time between inspecting completed results is shortened; active countdowns and collection run at their real pace. There is no narration.
+The older template recordings show MCP Workflow 0.15.0 on Windows; the prompt-to-results recording shows the 0.17.0 desktop build. Frames were captured through the computer-use runtime and encoded with FFmpeg. They contain actual UI execution, with no simulated progress or results. Idle time between inspecting completed results is shortened; active countdowns and collection run at their real pace. There is no narration.
 
-## Amazon-style scraper
+## Prompt to scraper results — shareable video
+
+**[Download the 57-second captioned MP4](amazon-scraper-prompt-to-results.mp4)** (1600 × 1200, 30 fps, H.264/yuv420p, about 1.9 MB, silent with burned-in captions and fast-start playback).
+
+The featured playable video in the main README is a GitHub attachment of this file. It shows an actual desktop session recorded October 30, 2026:
+
+1. Enter the [complete prompt](../../examples/amazon-scraper-builder-prompt.txt) into Build with AI using the existing ChatGPT subscription.
+2. Generate a draft with a three-second delay, native scraping steps, a page counter, conditional pagination, a loop and CSV/JSON exports.
+3. Review and save that generated graph. AI flags live CSV as unresolved; set its filename prefix in Collect rows. This one manual setting is included in the video.
+4. Run that same workflow beside the bundled pages, showing the active step, countdown, counter, True/False condition results and the actual CSV growing from three to five unique rows.
+5. Reach End and inspect both the table and raw CSV text.
+
+Generation waiting time and idle review time are shortened. Static UI captures are held for readability; the active run uses timestamped desktop frames at their observed timing. Intro/outro cards and captions are editorial additions. Progress and results are not simulated. The full MP4 decodes successfully, and the CSV/JSON files were independently compared: five matching unique products.
+
+[Recorded workflow JSON](ai-scraper-workflow.json) · [Actual CSV](ai-scraper-products.csv) · [Actual JSON](ai-scraper-products.json). The exported workflow has its local workspace path cleared for portability. Its original AI-written notes retain the uncertainty raised during generation; the live CSV setting was resolved during the recorded review. This is a different AI-generated graph from the older one-click template, with the same requested routing and selectors.
+
+Upload the MP4 as a video when sharing on forums. The fictional-data label is burned into the footage. No live Amazon/AWS requests or forum posts were made.
+
+## Earlier Amazon-style template recording
 
 ### Prompt and workflow
 
@@ -10,11 +28,11 @@ Use the [complete AI-builder prompt](../../examples/amazon-scraper-builder-promp
 
 The [saved workflow JSON](../../examples/amazon-scraper-demo.json) is the exact template demonstrated in the recording. The [main README includes its flow diagram and expected result](../../README.md#prompt--workflow--results). Import that JSON to reproduce the demonstrated steps exactly; an AI-generated draft may vary.
 
-This prompt is a builder brief supplied alongside the existing template, not a transcript of its original creation. The recording below shows execution of the saved template and does not show prompting or AI generation. It uses no AWS service.
+The prompt was subsequently used in the new prompt-to-results recording above. The older recording below shows only execution of the prebuilt template. Neither uses an AWS service.
 
 ### Execution recording
 
-This is the featured playable video in the [main README](../../README.md#amazon-scraper-demo). The GitHub attachment is a copy of `amazon-scraper-demo.mp4`; the repository copy remains available for downloading.
+This older `amazon-scraper-demo.mp4` remains available for downloading. The main README now features the prompt-to-results video instead.
 
 `amazon-scraper-demo.mp4` shows the workflow beside the exact bundled HTML pages it fetches. It includes:
 

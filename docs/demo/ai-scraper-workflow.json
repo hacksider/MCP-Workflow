@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "name": "Amazon-style scraper demonstration",
+  "description": "Draft for scraping only the bundled fictional catalog, with deterministic native page transitions and CSV/JSON exports. The supplied two-page fixture is expected to yield five unique products; this has not been verified.",
+  "cwd": "",
+  "instructions": "Run steps sequentially, completing each before starting the next. Use only bundled fixture://amazon-demo/ pages; never contact Amazon, AWS, or external URLs. Stop on any error, block, missing required field, or next URL outside the bundled catalog. Do not bypass restrictions. No AI decisions are needed during repeat runs. Before execution, confirm fixture URL support, row-self attribute extraction, and first-occurrence deduplication. The supplied step schema has no documented live CSV setting: live CSV accumulation remains unsupported in this draft and must be explicitly resolved before claiming full compliance. Do not substitute repeated exports for live CSV. Do not retry external effects automatically.",
+  "startStepId": "begin",
+  "maxExecutions": 40,
+  "steps": [
+    {
+      "id": "begin",
+      "kind": "values",
+      "name": "Beginning",
+      "instructions": "Initialize the current fixture URL.",
+      "endpoint": "",
+      "documentation": "Workflow entry point.",
+      "repeat": 1,
+      "values": "{\"url\":\"fixture://amazon-demo/page-1\"}",
+      "next": "delay"
+    },
+    {
+      "id": "delay",
+      "kind": "wait",
+      "name": "Wait 3 seconds",
+      "instructions": "Wait before every page request.",
+      "endpoint": "",
+      "documentation": "Delay is stored in actual seconds.",
+      "repeat": 1,
+      "wait": {
+        "seconds": 3
+      },
+      "next": "fetch"
+    },
+    {
+      "id": "fetch",
+      "kind": "fetch",
+      "name": "Fetch current fixture page",
+      "instructions": "Fetch only the current bundled catalog URL. Stop if fixture URLs are unsupported or access is blocked.",
+      "endpoint": "",
+      "documentation": "Native Fetch must support the bundled fixture scheme. maxPages is capped at 3; explicit transitions below control pagination. Native Fetch does not render JavaScript or bypass restrictions.",
+      "repeat": 1,
+      "fetch": {
+        "url": "{{vars.url}}",
+        "maxPages": 3
+      },
+      "next": "extract"
+    },
+    {
+      "id": "extract",
+      "kind": "extract",
+      "name": "Extract products and next URL",
+      "instructions": "Extract products using the supplied selectors. Read asin from each matched row itself. Stop if any required asin or title is missing. Resolve pagination only within the bundled catalog.",
+      "endpoint": "",
+      "documentation": "Selectors are user-supplied and unverified. Empty selector for asin denotes the matched row itself; confirm runtime support before execution. nextSelector must obtain the next link URL from .s-pagination-next.",
+      "repeat": 1,
+      "extract": {
+        "source": "{{steps.fetch.outputs}}",
+        "rowSelector": "[data-asin]",
+        "fields": [
+          {
+            "name": "asin",
+            "selector": "",
+            "attribute": "data-asin",
+            "required": true
+          },
+          {
+            "name": "title",
+            "selector": "h2",
+            "attribute": "",
+            "required": true
+          },
+          {
+            "name": "price",
+            "selector": ".a-offscreen",
+            "attribute": "",
+            "required": false
+          },
+          {
+            "name": "url",
+            "selector": ".product-link",
+            "attribute": "href",
+            "required": false
+          }
+        ],
+        "nextSelector": ".s-pagination-next"
+      },
+      "next": "collect"
+    },
+    {
+      "id": "collect",
+      "kind": "collect",
+      "name": "Collect unique products",
+      "instructions": "Append rows to products, deduplicating by asin and retaining the first occurrence across all pages. Stop if the native collector cannot preserve the first occurrence.",
+      "endpoint": "",
+      "documentation": "uniqueKey specifies asin. The supplied schema does not document a duplicate-resolution policy or live CSV setting. First-occurrence behavior requires confirmation. Live CSV named amazon-demo-products remains an unresolved requirement; final CSV export is configured separately.",
+      "repeat": 1,
+      "collect": {
+        "source": "{{steps.extract.outputs.rows}}",
+        "dataset": "products",
+        "uniqueKey": "asin",
+        "liveCsvName": "amazon-demo-products"
+      },
+      "next": "pages"
+    },
+    {
+      "id": "pages",
+      "kind": "counter",
+      "name": "Increment collected-page counter",
+      "instructions": "Increment once after each page is collected. Below 3, inspect nextUrl; at 3, export.",
+      "endpoint": "",
+      "documentation": "Counter starts at zero and increments on each visit. The limit bounds requested pages to three.",
+      "repeat": 1,
+      "counter": {
+        "limit": 3,
+        "below": "hasnext",
+        "after": "csv"
+      }
+    },
+    {
+      "id": "hasnext",
+      "kind": "condition",
+      "name": "Does nextUrl exist?",
+      "instructions": "Follow the next fixture URL only when present.",
+      "endpoint": "",
+      "documentation": "Native condition controls pagination without AI decisions.",
+      "repeat": 1,
+      "condition": {
+        "left": "{{steps.extract.outputs.nextUrl}}",
+        "operator": "truthy",
+        "right": "",
+        "yes": "seturl",
+        "no": "csv"
+      }
+    },
+    {
+      "id": "seturl",
+      "kind": "values",
+      "name": "Set next fixture URL",
+      "instructions": "Set the current URL to the extracted next URL. Stop if it points outside the bundled fictional catalog.",
+      "endpoint": "",
+      "documentation": "Returns through the required delay before the next fetch.",
+      "repeat": 1,
+      "values": "{\"url\":\"{{steps.extract.outputs.nextUrl}}\"}",
+      "next": "delay"
+    },
+    {
+      "id": "csv",
+      "kind": "export",
+      "name": "Export products as CSV",
+      "instructions": "Export the accumulated products dataset as CSV.",
+      "endpoint": "",
+      "documentation": "Final export; this does not implement live CSV accumulation.",
+      "repeat": 1,
+      "export": {
+        "dataset": "products",
+        "format": "csv",
+        "name": "amazon-demo-products"
+      },
+      "next": "json"
+    },
+    {
+      "id": "json",
+      "kind": "export",
+      "name": "Export products as JSON",
+      "instructions": "Export the same products dataset as JSON, then reach End.",
+      "endpoint": "",
+      "documentation": "Expected fixture result: five unique products in both exports. No result has been generated or verified.",
+      "repeat": 1,
+      "export": {
+        "dataset": "products",
+        "format": "json",
+        "name": "amazon-demo-products"
+      },
+      "next": "$end"
+    }
+  ],
+  "id": "7d43093f-ba53-4977-9d68-5bba7b3be9e8"
+}
