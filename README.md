@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.17.1** · Tauri + React + Rust · Desktop AI automation
+Current version: **0.17.2** · Tauri + React + Rust · Desktop AI automation
 
 [Comparison](#comparison-with-prompt-driven-mcp-agents) · [Demo](#amazon-scraper-demo) · [Build with AI](#build-a-workflow-with-ai)
 
@@ -82,6 +82,35 @@ These are cumulative model tokens for the full agent run, including repeated con
 Watch the workflow beside the demo pages, with conditions, pagination and a CSV filling in real time.
 
 https://github.com/user-attachments/assets/5cc4b2e4-184b-478b-a4ba-59ce069c23c0
+
+### Prompt → workflow → results
+
+Paste the [complete scraper prompt](examples/amazon-scraper-builder-prompt.txt) into **Build with AI**. It specifies the fictional starting URL, exact selectors, three-second delay, deduplication, live CSV, pagination condition, three-page counter limit and CSV/JSON exports.
+
+> Create an Amazon-style scraper using the bundled fictional pages. Extract asin, title, price and URL; collect unique products by asin and update a live CSV. Wait three seconds before each request. Count pages and stop at three. If another page exists, follow it and repeat; otherwise export CSV and JSON, then finish. Use native steps and bound the workflow to 40 step executions.
+
+The [complete saved workflow](examples/amazon-scraper-demo.json) used in the video follows this graph:
+
+```mermaid
+flowchart TD
+  begin([Beginning]) --> inputs[Set sample page URL]
+  inputs --> delay[Delay: 3 seconds]
+  delay --> fetch[Fetch current page]
+  fetch --> extract[Extract products and next URL]
+  extract --> collect[Collect unique products / update live CSV]
+  collect --> counter{Page counter reaches 3?}
+  counter -->|Yes| csv[Export CSV]
+  counter -->|No| condition{Next page exists?}
+  condition -->|Yes| advance[Set URL to next page]
+  advance --> delay
+  condition -->|No| csv
+  csv --> json[Export JSON]
+  json --> finish([End])
+```
+
+**Expected result:** the first page contributes three products; the second adds two unique products and skips one duplicate. No next page remains, so the condition chooses export and the flow reaches End. [View the five-row CSV](docs/demo/products.csv) · [View the JSON](docs/demo/products.json).
+
+The video shows the saved template executing, not an AI-generation session. The prompt above is a reproducible builder brief for that template; it is not a recovered transcript of its original creation. Generated drafts can differ: review them against the graph, or import the supplied JSON for the exact demonstrated workflow. This demo uses no AWS service or live Amazon website.
 
 ## Try it yourself
 

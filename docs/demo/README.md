@@ -4,6 +4,16 @@ These recordings show MCP Workflow 0.15.0 on Windows. Frames were captured throu
 
 ## Amazon-style scraper
 
+### Prompt and workflow
+
+Use the [complete AI-builder prompt](../../examples/amazon-scraper-builder-prompt.txt) with **Build with AI**, then inspect and save the generated draft. The prompt describes the starting fixture URL, field selectors, live CSV, conditions, loop, counter limit, delays and final exports. AI builds the plan; native steps execute this scraper without model calls on repeat runs.
+
+The [saved workflow JSON](../../examples/amazon-scraper-demo.json) is the exact template demonstrated in the recording. The [main README includes its flow diagram and expected result](../../README.md#prompt--workflow--results). Import that JSON to reproduce the demonstrated steps exactly; an AI-generated draft may vary.
+
+This prompt is a builder brief supplied alongside the existing template, not a transcript of its original creation. The recording below shows execution of the saved template and does not show prompting or AI generation. It uses no AWS service.
+
+### Execution recording
+
 This is the featured playable video in the [main README](../../README.md#amazon-scraper-demo). The GitHub attachment is a copy of `amazon-scraper-demo.mp4`; the repository copy remains available for downloading.
 
 `amazon-scraper-demo.mp4` shows the workflow beside the exact bundled HTML pages it fetches. It includes:

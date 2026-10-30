@@ -1,0 +1,31 @@
+Create a repeatable workflow named "Amazon-style scraper demonstration".
+Use only the bundled fictional catalog pages; do not contact Amazon or AWS.
+
+Start at Beginning and set url to fixture://amazon-demo/page-1.
+Before each page request, wait 3 seconds. Fetch the current url, with a
+maximum of 3 pages. Extract product rows using [data-asin]:
+- asin: the row's data-asin attribute (required)
+- title: h2 text (required)
+- price: .a-offscreen text (optional)
+- url: .product-link href (optional)
+Get the next page URL from .s-pagination-next.
+
+Collect rows in the products dataset, deduplicating by asin and keeping
+the first occurrence. Enable a live CSV named amazon-demo-products so I
+can watch the rows accumulate after each page.
+
+Increment a page counter after collecting rows. When it reaches 3, go to
+CSV export. Otherwise, check whether the extracted nextUrl exists:
+- Yes: update url to nextUrl and loop back to the 3-second delay.
+- No: go to CSV export.
+
+Export products as CSV, then JSON, both named amazon-demo-products, and
+reach End. Use a maximum of 40 step executions to bound the workflow.
+Each step must finish before the next starts. Stop on errors or blocks;
+do not bypass access restrictions or guess missing required fields.
+
+Use native steps for fetching, extraction, collection, conditions,
+counter, delay and exports. AI is used to build the workflow, not to
+decide each page transition during repeat runs. Explain any unsupported
+setting rather than silently omitting it. With the bundled two pages,
+the expected result is five unique products in CSV and JSON.

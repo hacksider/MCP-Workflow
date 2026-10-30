@@ -1164,7 +1164,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.17.1</span>
+          <span className="version">0.17.2</span>
         </div>
         <div className="workflow-library-actions">
           <button
