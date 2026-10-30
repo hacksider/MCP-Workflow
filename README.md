@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.16.2** · Tauri + React + Rust · Windows installer
+Current version: **0.17.0** · Tauri + React + Rust · Desktop AI automation
 
 [Comparison](#comparison-with-prompt-driven-mcp-agents) · [Demo](#amazon-scraper-demo) · [Build with AI](#build-a-workflow-with-ai)
 
@@ -147,7 +147,7 @@ Choose **ChatGPT subscription, Claude subscription, OpenAI API, Claude API or Be
 
 ## Run from source
 
-Install Node.js 20+, Rust and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).
+Install Node.js 22.12+, Rust and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).
 
 ```sh
 npm install
@@ -157,6 +157,18 @@ npm run desktop
 AI steps additionally need the selected provider's runtime and sign-in or credentials. [Setup, references, loops, examples and limits →](docs/guide.md)
 
 Manual runs are supported. Scheduling and unattended operation are not implemented. Live scraping requires permitted access and selectors suited to the site's HTML; JavaScript rendering and access-block bypass are not built into Fetch page.
+
+## Automatic desktop releases
+
+Every **Monday at 09:00 Manila time (01:00 UTC)**, GitHub Actions checks for application or build changes since the last published release. Documentation-only changes are skipped. The first run releases the current application. You can also run **Actions → Weekly desktop release → Run workflow** on the default branch.
+
+A release includes **Windows x64 (.exe)**, **Linux x64 (.AppImage and .deb)**, **macOS Intel + Apple silicon (.dmg)** and **SHA256SUMS**. All three builds and their tests must succeed before publishing. Interrupted uploads stay as a draft and can be retried. Tags include the application version and source revision, so rerunning the same revision does not create another release.
+
+**Release summaries use GitHub Copilot when available.** If installation, authentication, allowance or summary generation fails, a **free local summarizer** groups the real commits into features, fixes and maintenance, with commit links. Every release identifies which summarizer was used. Set the repository variable `RELEASE_SUMMARIZER` to `local` to always use the free fallback. No paid summarizer API is required.
+
+The workflow becomes active after it is pushed to the repository's default branch with Actions enabled. Copilot uses the built-in workflow token and needs the repository owner's applicable entitlement/policy; its usage is not guaranteed free ([GitHub setup and permissions](https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli-in-actions)). GitHub-hosted build minutes follow the repository's Actions plan. Scheduled runs may be delayed by GitHub. If GitHub Actions itself is unavailable, publishing waits until the workflow can run again.
+
+Windows packages are unsigned; macOS packages use ad-hoc signing without Apple notarization. macOS/Linux packages are built and tested by their hosted runners; the release workflow must run successfully to verify those platforms. See [the workflow](.github/workflows/weekly-release.yml).
 
 ## License
 
