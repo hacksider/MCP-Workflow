@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.17.0** · Tauri + React + Rust · Desktop AI automation
+Current version: **0.17.1** · Tauri + React + Rust · Desktop AI automation
 
 [Comparison](#comparison-with-prompt-driven-mcp-agents) · [Demo](#amazon-scraper-demo) · [Build with AI](#build-a-workflow-with-ai)
 
@@ -14,7 +14,7 @@ Current version: **0.17.0** · Tauri + React + Rust · Desktop AI automation
 
 ![Measured scraper comparison: execution time and observed output accuracy](docs/charts/scraper-benchmark.png)
 
-| Measured result | Prompt + MCP agent | Saved workflow engine |
+| Measured result | Prompt + MCP agent | Saved native workflow (no AI steps) |
 | --- | ---: | ---: |
 | Average completion time | 40.05 s | **6.12 s** |
 | Median completion time | 39.51 s | **6.12 s** |
@@ -34,7 +34,11 @@ Current version: **0.17.0** · Tauri + React + Rust · Desktop AI automation
 <details>
 <summary>Model tokens used in every measured run</summary>
 
-| Pair | Agent total | Input | Of which cached | Output | Native workflow total |
+**Why zero?** This saved scraper uses code-based decisions: check whether `nextUrl` exists, follow the configured branch, and count page repetitions. These operations use CPU time but do not send prompts to a model, so they consume **0 model tokens during repeat execution**. This does not mean the application always uses zero tokens.
+
+**Scope:** the comparison is a fresh AI agent versus a prebuilt native scraper. Workflows containing Instructions or other AI steps do consume model tokens. AI builder/authoring tokens were **not measured** here, so these numbers do not compare the full cost from an initial prompt to a finished automation, or two AI-driven workflows.
+
+| Pair | Agent total | Input | Of which cached | Output | Native repeat-run model tokens |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 1 | 182,967 | 181,332 | 143,232 | 1,635 | 0 |
 | 2 | 185,533 | 183,586 | 163,968 | 1,947 | 0 |

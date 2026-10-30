@@ -6,7 +6,7 @@ On October 30, 2026, the saved native workflow engine averaged **6.12 seconds**,
 
 ## Results
 
-| Metric | Prompt + MCP agent | Saved workflow engine |
+| Metric | Prompt + MCP agent | Saved native workflow (no AI steps) |
 | --- | ---: | ---: |
 | Mean elapsed | 40.05 s | 6.12 s |
 | Median elapsed | 39.51 s | 6.12 s |
@@ -35,7 +35,11 @@ On October 30, 2026, the saved native workflow engine averaged **6.12 seconds**,
 
 ## Model tokens per run
 
-| Pair | Agent total | Input | Of which cached | Output | Native workflow total |
+**Why zero?** This saved scraper uses code-based decisions: check whether `nextUrl` exists, follow the configured branch, and count page repetitions. These operations use CPU time but do not send prompts to a model, so they consume **0 model tokens during repeat execution**. This does not mean the application always uses zero tokens.
+
+**Scope:** the comparison is a fresh AI agent versus a prebuilt native scraper. Workflows containing Instructions or other AI steps do consume model tokens. AI builder/authoring tokens were **not measured** here, so these numbers do not compare the full cost from an initial prompt to a finished automation, or two AI-driven workflows.
+
+| Pair | Agent total | Input | Of which cached | Output | Native repeat-run model tokens |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 1 | 182,967 | 181,332 | 143,232 | 1,635 | 0 |
 | 2 | 185,533 | 183,586 | 163,968 | 1,947 | 0 |
