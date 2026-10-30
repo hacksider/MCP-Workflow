@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.17.4** · Tauri + React + Rust · Desktop AI automation
+Current version: **0.17.5** · Tauri + React + Rust · Desktop AI automation
 
 [Comparison](#comparison-with-prompt-driven-mcp-agents) · [Demo](#amazon-scraper-demo) · [Build with AI](#build-a-workflow-with-ai)
 
@@ -189,7 +189,7 @@ npm install
 npm run desktop
 ```
 
-To build an installer for your current platform, run `npm ci`, then `npm run desktop:build`. On Windows, the installer is written to `src-tauri/target/release/bundle/nsis/`. For the complete Windows, Linux and macOS set, use the build-only manual GitHub workflow below.
+To build an installer for your current platform, run `npm ci`, then `npm run desktop:build`. On Windows, the installer is written to `src-tauri/target/release/bundle/nsis/`. For the complete Windows, Linux and macOS set, use the build-only manual GitHub workflow below. The developer benchmark adapter is built separately as a Cargo example and is excluded from desktop installers.
 
 AI steps additionally need the selected provider's runtime and sign-in or credentials. [Setup, references, loops, examples and limits →](docs/guide.md)
 

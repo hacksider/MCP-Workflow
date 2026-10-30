@@ -1,7 +1,7 @@
 //! Local benchmark adapter. Calls the production parser and file writers, without a UI.
-#[path = "../http.rs"] mod http;
-#[path = "../scraping.rs"] mod scraping;
-#[path = "../live_csv.rs"] mod live_csv;
+#[path = "../src/http.rs"] mod http;
+#[path = "../src/scraping.rs"] mod scraping;
+#[path = "../src/live_csv.rs"] mod live_csv;
 use serde_json::{json, Value};
 use std::io::{BufRead, Write};
 

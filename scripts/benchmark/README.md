@@ -8,7 +8,7 @@ Requirements: the project's Node/Rust dependencies, Codex CLI signed in with a C
 
 ```sh
 npm install
-cargo build --release --manifest-path src-tauri/Cargo.toml --bin workflow-benchmark-backend
+cargo build --release --manifest-path src-tauri/Cargo.toml --example workflow-benchmark-backend
 node scripts/benchmark/run.mjs --pilot
 node scripts/benchmark/run.mjs
 ```

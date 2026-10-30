@@ -5,7 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 export const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 export async function createBackend(folder,fixture) {
-  const exe=path.join(repo,'src-tauri/target/release/workflow-benchmark-backend'+(process.platform==='win32'?'.exe':''));
+  const exe=path.join(repo,'src-tauri/target/release/examples/workflow-benchmark-backend'+(process.platform==='win32'?'.exe':''));
   const child=spawn(exe,[folder,fixture],{windowsHide:true,stdio:['pipe','pipe','pipe']});
   let resolveReady,rejectReady,current=null;
   const ready=new Promise((resolve,reject)=>{resolveReady=resolve;rejectReady=reject;});
