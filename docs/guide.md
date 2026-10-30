@@ -120,7 +120,9 @@ The active step glows. Fast actions show milliseconds. The console reports each 
 
 Stopping a native network request waits for the in-flight request (up to 30 seconds, plus bounded retries). Stopping cannot undo completed file writes, API writes or computer actions. CSV exports quote fields and prefix formula-like values for safer spreadsheet opening; JSON preserves the original values. Exports never overwrite existing files.
 
-Execution is manual in this release. Schedules, unattended background operation and automatic sign-in are not implemented.
+Use **Schedules** to choose a saved workflow and repeat it every X minutes, hours or days, every day at a local time, or once on a selected date and time. The first interval-based run starts after one interval; a one-time schedule disables itself after its slot. Pause/enable/remove schedules and inspect the next run and started/skipped counts. Schedules stay on this device and are not imported/exported with workflow JSON.
+
+The app must stay open and the computer awake. Only one flow runs at a time per app window; busy slots are skipped. Open dialogs also skip due slots to avoid switching workflows while you edit. Runs over 30 seconds late are skipped and missed intervals never replay a backlog. Times use the computer's local timezone. Keep a single app instance open. AI approvals still require interaction; operating-system background execution and automatic sign-in are not implemented.
 
 Developer checks: `npm run check`, `cargo test --manifest-path src-tauri/Cargo.toml`, `npm run desktop:build`. The test suite includes graph routing, loop limits, scraper pagination/deduplication, native CRUD requests, form validation, completion guards, plugin policy and provider environment isolation. A live Claude test reached the official runtime but failed on an expired OAuth token; reauthentication is required. Paid API and Bedrock inference were not exercised. The recorded scraper uses the real desktop app with bundled fixtures.
 

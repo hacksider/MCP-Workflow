@@ -1193,3 +1193,13 @@ label small {
 .builder-error { color: #a5332c !important; }
 .builder-notices { padding-left: 20px; font-size: 12px; line-height: 1.7; color: #805d14; }
 .builder-step { border-bottom: 1px solid #dbe5df; padding: 12px 0; }
+.schedule-dialog { width: min(820px, 92vw); }
+.schedule-dialog h2 { display: flex; align-items: center; gap: 8px; }
+.schedule-dialog label { display: flex; flex-direction: column; gap: 7px; }
+.schedule-dialog select, .schedule-dialog input { width: 100%; }
+.schedule-create { display: grid; gap: 14px; padding: 18px; background: #f5f8f5; border-radius: 12px; }
+.schedule-interval { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.schedule-list { display: grid; gap: 12px; }
+.schedule-list article { border: 1px solid #dbe5df; padding: 16px; border-radius: 10px; }
+.schedule-actions { display: flex; gap: 10px; }
+.schedule-status { padding: 8px 24px; background: #edf5ee; color: #24573d; font-size: 12px; }

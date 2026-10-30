@@ -1,8 +1,11 @@
 import { formatCountdown } from "./timers";
+import { ScheduleDialog } from "./ScheduleDialog";
+import { consumeSchedule, loadSchedules, scheduleKey, type FlowSchedule } from "./scheduler";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
+  CalendarClock,
   ArrowDown,
   ArrowDownToLine,
   ArrowUp,
@@ -166,6 +169,23 @@ function App() {
   const [autoSave, setAutoSave] = useState(!initial.error);
   const [libraryOpen, showLibrary] = useState(false);
   const [builderOpen, showBuilder] = useState(false);
+  const [schedulesOpen, showSchedules] = useState(false);
+  const [scheduleInitial] = useState(() => {
+    try { return { schedules: loadSchedules(localStorage.getItem(scheduleKey)), error: "" }; }
+    catch { return { schedules: [] as FlowSchedule[], error: "Saved schedules could not be read. Scheduling is disabled; add a new schedule to restore it." }; }
+  });
+  const [schedules, setSchedules] = useState(scheduleInitial.schedules);
+  const schedulesRef = useRef(schedules);
+  const [scheduleNotice, setScheduleNotice] = useState(scheduleInitial.error);
+  const [pendingScheduled, setPendingScheduled] = useState<string | null>(null);
+  const schedulerClaim = useRef(false);
+  const scheduleTick = useRef(() => {});
+  function saveSchedules(next: FlowSchedule[]) {
+    if (next.length > 1000) throw Error("The maximum is 1000 saved schedules.");
+    localStorage.setItem(scheduleKey, JSON.stringify(next)); // Save before claiming a run.
+    schedulesRef.current = next;
+    setSchedules(next);
+  }
   const builderActive = useRef(false);
   const [startNew, setStartNew] = useState(false);
   const [saveNotice, setSaveNotice] = useState("");
@@ -347,6 +367,8 @@ function App() {
   function removeWorkflow(id: string) {
     if (runningLock.current) return;
     setLibrary((lib) => deleteWorkflow(lib, id));
+    try { saveSchedules(schedulesRef.current.filter(s => s.workflowId !== id)); }
+    catch { setScheduleNotice("Could not remove this workflow's schedules. Missing workflows will not run."); }
     setMetrics((all) => {
       const next = { ...all };
       delete next[id];
@@ -1156,6 +1178,45 @@ function App() {
         .includes(filter.toLowerCase()),
   );
   const request = requests[0];
+  scheduleTick.current = () => {
+    if (!autoSave || schedulerClaim.current) return;
+    try {
+      // Refresh other-window claims before choosing work. Web Locks serialize supported windows.
+      const saved = loadSchedules(localStorage.getItem(scheduleKey));
+      const time = Date.now();
+      const due = saved.filter(s => s.enabled && s.nextAt <= time).sort((a,b) => a.nextAt-b.nextAt);
+      if (!due.length) { schedulesRef.current=saved; setSchedules(saved); return; }
+      const target = due[0];
+      const exists = library.workflows.some(e => e.workflow.id === target.workflowId);
+      const available = exists && !runningLock.current && !busy && !pendingScheduled && !builderOpen && !libraryOpen && !schedulesOpen;
+      const result = consumeSchedule(target, time, available);
+      saveSchedules(saved.map(s => s.id === target.id ? { ...result.schedule, enabled: exists && result.schedule.enabled } : s));
+      setScheduleNotice(`${library.workflows.find(e=>e.workflow.id===target.workflowId)?.workflow.name??"Removed workflow"}: ${result.schedule.lastStatus}`);
+      if (result.launch) {
+        schedulerClaim.current=true;
+        if (library.activeId !== target.workflowId) {
+          setLibrary(lib=>({...lib,activeId:target.workflowId}));
+          resetEditor();
+        }
+        setPendingScheduled(target.workflowId);
+      }
+    } catch { setScheduleNotice("Schedules could not be read or written; no new run was started. Open Schedules to review."); }
+  };
+  useEffect(() => {
+    const timer=setInterval(() => {
+      if (navigator.locks) void navigator.locks.request("mcp-workflow-scheduler",{ifAvailable:true},lock=>{if(lock)scheduleTick.current();}).catch(()=>setScheduleNotice("Scheduling could not acquire its local run lock. Open Schedules to review."));
+      else scheduleTick.current();
+    },1000);
+    return ()=>clearInterval(timer);
+  },[]);
+  useEffect(() => {
+    if (!pendingScheduled || workflow.id !== pendingScheduled) return;
+    setPendingScheduled(null);
+    // The selected workflow's current render supplies the correct provider and workspace.
+    const execution=execute(); // execute acquires runningLock synchronously before its first await.
+    schedulerClaim.current=false;
+    void execution;
+  },[pendingScheduled,workflow.id]);
   return (
     <div className="workflow-app">
       <header className="topbar">
@@ -1164,7 +1225,7 @@ function App() {
             <GitBranch size={20} />
           </span>
           MCP <b>Workflow</b>
-          <span className="version">0.17.5</span>
+          <span className="version">0.18.0</span>
         </div>
         <div className="workflow-library-actions">
           <button
@@ -1192,6 +1253,7 @@ function App() {
             Save
           </button>
           <button disabled={running} onClick={() => showBuilder(true)}><Sparkles size={15}/>Build with AI</button>
+          <button disabled={running} onClick={()=>showSchedules(true)} title={scheduleNotice||"Schedule saved workflows"}><CalendarClock size={15}/>Schedules ({schedules.filter(s=>s.enabled).length})</button>
         </div>
         <div className="top-actions">
           <span className={`connection ${connected ? "online" : ""}`}>
@@ -1219,6 +1281,8 @@ function App() {
           )}
         </div>
       </header>
+      {scheduleNotice&&<div className="schedule-status" role="status">{scheduleNotice}</div>}
+      {schedulesOpen&&<ScheduleDialog library={library} schedules={schedules} onChange={saveSchedules} onClose={()=>showSchedules(false)}/>}
       <div className="workspace">
         <aside className="library">
           <div className="section-eyebrow">YOUR BUILDING BLOCKS</div>

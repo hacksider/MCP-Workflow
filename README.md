@@ -4,7 +4,7 @@
 
 A desktop AI automation builder for prompts, files, forms, APIs and web scraping. Connect steps, add branches and loops, and watch the active step glow until the task finishes. Tools run behind the scenes.
 
-Current version: **0.17.5** · Tauri + React + Rust · Desktop AI automation
+Current version: **0.18.0** · Tauri + React + Rust · Desktop AI automation
 
 [Comparison](#comparison-with-prompt-driven-mcp-agents) · [Demo](#amazon-scraper-demo) · [Build with AI](#build-a-workflow-with-ai)
 
@@ -73,7 +73,7 @@ These are cumulative model tokens for the full agent run, including repeated con
 | Visibility | Conversation and tool traces vary by host | Active-step glow, countdowns, counters and live CSV |
 | Cost | Depends on model usage, tools and billing | Native steps need no model inference; AI steps and generation do |
 | Flexibility | Useful for exploration and changing requirements | Useful for recurring tasks with known inputs and outputs |
-| Scheduling | Available in some agent hosts | Manual runs only; delays do not resume after shutdown |
+| Scheduling | Available in some agent hosts | Saved interval, daily-time and one-time schedules while the app is open; missed slots are skipped |
 
 </details>
 
@@ -193,7 +193,21 @@ To build an installer for your current platform, run `npm ci`, then `npm run des
 
 AI steps additionally need the selected provider's runtime and sign-in or credentials. [Setup, references, loops, examples and limits →](docs/guide.md)
 
-Manual runs are supported. Scheduling and unattended operation are not implemented. Live scraping requires permitted access and selectors suited to the site's HTML; JavaScript rendering and access-block bypass are not built into Fetch page.
+Manual runs and saved local schedules are supported. Scheduled runs require the app to remain open and the computer awake; AI approval requests still need your attention. Live scraping requires permitted access and selectors suited to the site's HTML; JavaScript rendering and access-block bypass are not built into Fetch page.
+
+## Schedule a workflow
+
+Click **Schedules**, choose a saved workflow, and add one of these:
+
+- **Repeat every X minutes, hours or days:** for example, every 15 minutes, every 2 hours, or every 3 days. The first run starts after one full interval.
+- **Every day at a specific time:** for example, 09:00 each morning.
+- **Once on a specific date and time:** runs once, then disables itself.
+
+Schedules show their next run, started-run count and skipped slots. Pause, enable or remove them whenever needed. They are saved on this device, separate from exported workflow JSON; imports never silently enable a schedule.
+
+![Interval-based schedules with pause controls and run history](docs/screenshots/workflow-schedules.png)
+
+**Keep the app open and your computer awake.** Times follow the computer's local timezone. Only one workflow runs at a time in an app window; busy slots are skipped. Runs more than 30 seconds late are skipped, and missed intervals never queue a burst of catch-up runs. Keep one app instance open for predictable operation. Scheduled runs can switch the active workflow; open dialogs defer execution by skipping due slots. Native steps need no AI account; AI steps require a ready provider and any requested approvals. This is not an operating-system background service.
 
 ## Automatic desktop releases
 
